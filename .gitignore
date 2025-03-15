@@ -1,0 +1,21 @@
+# Ignorar archivos .env
+.env
+
+# Ignorar carpeta venv (entorno virtual)
+venv/
+
+# Ignorar directorios de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignorar archivos de configuración de IDEs (si usas VSCode)
+.vscode/
+
+# Ignorar archivos de caché y logs
+*.log
+*.sqlite3
+*.db
+
+# Ignorar archivos de Docker
+*.dockerignore
