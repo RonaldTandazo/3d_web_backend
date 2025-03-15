@@ -1,20 +1,20 @@
-# Usa una imagen base de Python (si es un proyecto en FastAPI)
+# Usa una imagen base de Python
 FROM python:3.9-slim
 
-# Establecer el directorio de trabajo en el contenedor
+# Establece el directorio de trabajo en /app
 WORKDIR /app
 
-# Copiar los archivos de tu proyecto (incluyendo los archivos de configuración de Git) al contenedor
-COPY . .
+# Copia el archivo requirements.txt al contenedor
+COPY requirements.txt /app/
 
-# Instalar las dependencias
+# Instala las dependencias necesarias
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar todo el código de la aplicación al contenedor
-COPY . .
+# Copia el código del proyecto al contenedor
+COPY . /app/
 
-# Exponer el puerto en el que corre la aplicación
+# Exponer el puerto que usará FastAPI
 EXPOSE 8000
 
-# Definir el comando para ejecutar la aplicación FastAPI
+# Comando para ejecutar el servidor de FastAPI
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
