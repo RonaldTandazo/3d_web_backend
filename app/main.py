@@ -4,9 +4,18 @@ from app.graphql.GraphSchema import GraphSchema
 from app.db.database import get_db
 from app.security.AuthGraph import getCurrentUserFromToken
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.middleware.cors import CORSMiddleware 
 from app.config.logger import logger
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:81"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+)
 
 # GRAPHQL
 async def get_context(
@@ -15,7 +24,6 @@ async def get_context(
     db: AsyncSession = Depends(get_db)
 ):
     if authorization:
-        logger.info("Getting user from token")
         token = authorization.split("Bearer ")[-1]
         current_user = getCurrentUserFromToken(token)
     return {"current_user": current_user, "db": db}

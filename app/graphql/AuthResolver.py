@@ -1,8 +1,9 @@
 import strawberry
 from app.services.AuthService import AuthService
 from app.config.logger import logger
-from sqlalchemy.exc import SQLAlchemyError
 from app.security.AuthGraph import createAccessToken
+from strawberry.exceptions import GraphQLError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 @strawberry.type
 class AuthPayload:
@@ -18,22 +19,34 @@ class AuthQuery:
 @strawberry.type
 class AuthMutation:
     @strawberry.mutation
-    async def login(self, info, email: str, password: str) -> AuthPayload:
+    async def login(self, info, username: str, password: str) -> AuthPayload:
         db = info.context["db"]
         auth_service = AuthService(db)
         try:
-            user = await auth_service.loginUser(email, password)
+            user = await auth_service.loginUser(username, password)
 
-            if not user:
-                return AuthPayload(accessToken="", tokenType="Invalid credentials")
-            
-            token = createAccessToken(data={"sub": user.email, "id_user": user.id})
-            return AuthPayload(accessToken=token, tokenType="bearer")
+            if user.get("ok", False):
+                logger.info(user.get("user"))
+                data = user.get("user")
+                token = createAccessToken(data={"sub": data.username, "id_user": data.id, "firstName": data.first_name, "lastName": data.last_name, "email": data.email, "username": data.username})
+                return AuthPayload(accessToken=token, tokenType="bearer")
 
-        except SQLAlchemyError as e:
-            logger.error(f"Database error: {str(e)}")
-            return AuthPayload(accessToken="", tokenType="Database error")
+            raise GraphQLError(message=user['error'], extensions={"code": "BAD_USER_INPUT"})
+
+        except GraphQLError as e:
+            logger.error(e.message)
+            raise e
 
         except Exception as e:
-            logger.error(f"Unexpected error: {str(e)}")
-            return AuthPayload(accessToken="", tokenType="Internal Server Error")
+            error_mapping = {
+                IntegrityError: ("BAD_USER_INPUT", "El correo ya está en uso"),
+                SQLAlchemyError: ("INTERNAL_SERVER_ERROR", "Error interno del servidor"),
+                ValueError: ("BAD_USER_INPUT", "Datos inválidos"),
+                PermissionError: ("FORBIDDEN", "Permiso denegado"),
+                FileNotFoundError: ("NOT_FOUND", "Archivo no encontrado"),
+                ConnectionError: ("TOO_MANY_REQUESTS", "Demasiadas solicitudes"),
+            }
+
+            extension_code, error_message = error_mapping.get(type(e), ("INTERNAL_SERVER_ERROR", "Error desconocido"))
+            logger.error(error_message)
+            raise GraphQLError(message=error_message, extensions={"code": extension_code})

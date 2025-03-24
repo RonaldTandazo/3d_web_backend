@@ -2,17 +2,20 @@ import strawberry
 from app.services.UserService import UserService
 from fastapi import HTTPException, status
 from app.config.logger import logger
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from strawberry.exceptions import GraphQLError
 
 @strawberry.type
 class UserType:
     id: int
     email: str
-    name: str
+    username: str
 
 @strawberry.input
 class UserInput:
-    name: str
+    firstName: str
+    lastName: str
+    username: str
     email: str
     password: str
 
@@ -37,15 +40,36 @@ class UserMutation:
         db = info.context["db"]
         user_service = UserService(db)
         try:
-            user = await user_service.registerUser(user_data.name, user_data.email, user_data.password)
-            if not user:
-                raise HTTPException(status_code=400, detail="Email already in use")
+            user = await user_service.registerUser(
+                user_data.firstName, 
+                user_data.lastName, 
+                user_data.username, 
+                user_data.email, 
+                user_data.password
+            )
 
-            return "User created successfully"
+            if user.get("ok", False):
+                return "Usuario creado con éxito"
+            
+            raise GraphQLError(message=user['error'], extensions={"code": "BAD_USER_INPUT"})
 
-        except IntegrityError:
-            logger.warning(f"User with email {user_data.email} already exists.")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already in use")
+        except GraphQLError as e:
+            logger.error(e.message)
+            raise e
+
+        except Exception as e:
+            error_mapping = {
+                IntegrityError: ("BAD_USER_INPUT", "El correo ya está en uso"),
+                SQLAlchemyError: ("INTERNAL_SERVER_ERROR", "Error interno del servidor"),
+                ValueError: ("BAD_USER_INPUT", "Datos inválidos"),
+                PermissionError: ("FORBIDDEN", "Permiso denegado"),
+                FileNotFoundError: ("NOT_FOUND", "Archivo no encontrado"),
+                ConnectionError: ("TOO_MANY_REQUESTS", "Demasiadas solicitudes"),
+            }
+
+            extension_code, error_message = error_mapping.get(type(e), ("INTERNAL_SERVER_ERROR", "Error desconocido"))
+            logger.error(error_message)
+            raise GraphQLError(message=error_message, extensions={"code": extension_code})
 
     @strawberry.mutation
     async def resetPassword(self, info, email: str) -> str:

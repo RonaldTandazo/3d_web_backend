@@ -30,28 +30,52 @@ class UserService:
         except Exception as e:
             logger.error(f"Unexpected error while fetching user {email}: {str(e)}")
             return None
-
-    async def registerUser(self, name: str, email: str, password: str):
+        
+    async def getUserByUsename(self, username: str):
         try:
-            existing_user = await self.getUserByEmail(email)
-            if existing_user:
-                return None
+            result = await self.db.execute(select(User).filter(and_(User.username == username, User.active == "A")))
+            return result.scalars().first()
+        except SQLAlchemyError as e:
+            logger.error(f"Database error while fetching user {username}: {str(e)}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error while fetching user {username}: {str(e)}")
+            return None
+
+    async def registerUser(self, firstName: str, lastName: str, username: str, email: str, password: str):
+        try:
+            if await self.getUserByEmail(email):
+                return {"ok": False, "error": "Email already in use", "code": 400}
+
+            if await self.getUserByUsename(username):
+                return {"ok": False, "error": "Username already in use", "code": 400}
 
             hashed_password = User.hashPassword(password)
-            user = User(name=name, email=email, password=hashed_password, active="A")
+            user = User(
+                first_name=firstName,
+                last_name=lastName, 
+                username=username, 
+                email=email, 
+                password=hashed_password, 
+                active="A"
+            )
             self.db.add(user)
             await self.db.commit()
 
-            return user
-        except IntegrityError as e:
-            logger.warning(f"Integrity error while creating user {email}: {str(e)}")
-            return None
-        except SQLAlchemyError as e:
-            logger.error(f"Database error while creating user {email}: {str(e)}")
-            return None
+            return {"ok": True, "message": "User created successfully", "code": 201, "user": user}
+
         except Exception as e:
-            logger.error(f"Unexpected error while creating user {email}: {str(e)}")
-            return None
+            error_mapping = {
+                IntegrityError: (400, "Database integrity error"),
+                SQLAlchemyError: (500, "Database error"),
+                ValueError: (400, "Invalid input data"),
+                PermissionError: (401, "Unauthorized access"),
+                FileNotFoundError: (404, "Resource not found"),
+                ConnectionError: (429, "Too many requests"),
+            }
+
+            error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
+            return {"ok": False, "error": error_message, "code": error_code}
         
     async def changePassword(self, user: User, new_password: str):
         try:

@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.User import User
 from sqlalchemy.future import select
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from app.config.logger import logger
 from sqlalchemy import and_
 from fastapi import Depends
@@ -11,19 +11,27 @@ class AuthService:
     def __init__(self, db: AsyncSession = Depends(get_db)):
         self.db = db
 
-    async def loginUser(self, email, password):
+    async def loginUser(self, username, password):
         try:
-            result = await self.db.execute(select(User).filter(and_(User.email == email, User.active == "A")))
+            result = await self.db.execute(select(User).filter(and_(User.username == username, User.active == "A")))
             user = result.scalars().first()
 
-            if user and User.verifyPassword(password, user.password):
-                return user
-            return None
+            if user :
+                if User.verifyPassword(password, user.password):
+                    return {"ok": True, "message": "Sign In Success", "code": 201, "user": user}
+    
+                return {"ok": False, "error": "Invalid Password", "code": 400}
 
-        except SQLAlchemyError as e:
-            logger.error(f"Database error while logging in: {str(e)}")
-            raise Exception("Database error occurred while logging in.")
-
+            return {"ok": False, "error": "User Not Found", "code": 404}
         except Exception as e:
-            logger.error(f"Unexpected error during login: {str(e)}")
-            raise Exception("Unexpected error occurred during login.")
+            error_mapping = {
+                IntegrityError: (400, "Database integrity error"),
+                SQLAlchemyError: (500, "Database error"),
+                ValueError: (400, "Invalid input data"),
+                PermissionError: (401, "Unauthorized access"),
+                FileNotFoundError: (404, "Resource not found"),
+                ConnectionError: (429, "Too many requests"),
+            }
+
+            error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
+            return {"ok": False, "error": error_message, "code": error_code}
