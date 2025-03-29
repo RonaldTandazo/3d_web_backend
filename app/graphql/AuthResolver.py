@@ -26,7 +26,6 @@ class AuthMutation:
             user = await auth_service.loginUser(username, password)
 
             if user.get("ok", False):
-                logger.info(user.get("user"))
                 data = user.get("user")
                 token = createAccessToken(data={"sub": data.username, "id_user": data.id, "firstName": data.first_name, "lastName": data.last_name, "email": data.email, "username": data.username})
                 return AuthPayload(accessToken=token, tokenType="bearer")
