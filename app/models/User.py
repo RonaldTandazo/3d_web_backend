@@ -14,7 +14,6 @@ class User(Base):
     email = Column(String(50), unique=True, index=True)
     password = Column(String(50))
     active = Column(String(50))
-    temporal = Column(String(50))
 
     @classmethod
     def verifyPassword(cls, plain_password, hashed_password):
