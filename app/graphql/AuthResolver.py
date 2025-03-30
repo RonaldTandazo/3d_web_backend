@@ -26,8 +26,16 @@ class AuthMutation:
             user = await auth_service.loginUser(username, password)
 
             if user.get("ok", False):
-                data = user.get("user")
-                token = createAccessToken(data={"sub": data.username, "id_user": data.id, "firstName": data.first_name, "lastName": data.last_name, "email": data.email, "username": data.username})
+                data = user.get("data")
+                token = createAccessToken(data={
+                    "sub": data.username,
+                    "userId": data.user_id,
+                    "firstName": data.first_name, 
+                    "lastName": data.last_name, 
+                    "email": data.email, 
+                    "username": data.username, 
+                    "since": data.created_at.isoformat()
+                })
                 return AuthPayload(accessToken=token, tokenType="bearer")
 
             raise GraphQLError(message=user['error'], extensions={"code": "BAD_USER_INPUT"})

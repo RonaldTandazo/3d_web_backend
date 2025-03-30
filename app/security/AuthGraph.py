@@ -40,17 +40,17 @@ def verifyToken(token: str):
 def getCurrentUserFromToken(token: str = Depends(oauth2_scheme)):
     try:
         payload = verifyToken(token)
-        email = payload.get("sub")
-        id_user = payload.get("id_user")
+        username = payload.get("sub")
+        userId = payload.get("userId")
 
-        if not email:
+        if not username:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        return TokenData(email=email, id_user=id_user)
+        return TokenData(username=username, userId=userId)
     except JWTError as e:
         logger.error(f"Unexpected error: {str(e)}")
         raise HTTPException(

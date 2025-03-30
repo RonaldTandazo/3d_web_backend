@@ -13,12 +13,12 @@ class AuthService:
 
     async def loginUser(self, username, password):
         try:
-            result = await self.db.execute(select(User).filter(and_(User.username == username, User.active == "A")))
+            result = await self.db.execute(select(User).filter(and_(User.username == username, User.status == "A")))
             user = result.scalars().first()
 
             if user :
                 if User.verifyPassword(password, user.password):
-                    return {"ok": True, "message": "Sign In Success", "code": 201, "user": user}
+                    return {"ok": True, "message": "Sign In Success", "code": 201, "data": user}
     
                 return {"ok": False, "error": "Invalid Password", "code": 400}
 

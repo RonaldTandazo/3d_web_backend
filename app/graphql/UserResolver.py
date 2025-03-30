@@ -40,6 +40,14 @@ class UserMutation:
         db = info.context["db"]
         user_service = UserService(db)
         try:
+            email_in_use = await user_service.getUserByEmail(user_data.email)
+            if email_in_use.get("ok", True):
+                raise GraphQLError(message="Email already in use", extensions={"code": "BAD_USER_INPUT"})
+            
+            username_in_use = await user_service.getUserByUsername(user_data.username)
+            if username_in_use.get("ok", True):
+                raise GraphQLError(message="Username already in use", extensions={"code": "BAD_USER_INPUT"})
+
             user = await user_service.registerUser(
                 user_data.firstName, 
                 user_data.lastName, 
@@ -79,24 +87,38 @@ class UserMutation:
         return await "ssss"
 
     @strawberry.mutation
-    async def changePassword(self, info, current_password: str, new_password: str) -> str:
+    async def changePassword(self, info, currentPassword: str, newPassword: str) -> str:
         db = info.context["db"]
         user_service = UserService(db)
         current_user = info.context["current_user"]
         try:
-            user = await user_service.getUserByEmail(current_user.email)
-            if not user:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            user = await user_service.getUserByUsername(current_user.username)
+            if not user.get("ok", False):
+                raise GraphQLError(message=user['error'], extensions={"code": "BAD_USER_INPUT"})
+
+            user=user.get("data")
+            if not user.verifyPassword(currentPassword, user.password):
+                raise GraphQLError(message="Invalid Password", extensions={"code": "BAD_USER_INPUT"})
             
-            if not user.verifyPassword(current_password, user.password):
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid password")
-            
-            update = await user_service.changePassword(user, new_password)
-            
+            update = await user_service.changePassword(user, newPassword)
             if not update:
-                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error")
+                raise GraphQLError(message=user['error'], extensions={"code": "BAD_USER_INPUT"})
             
             return "Password changed successfully"
+        except GraphQLError as e:
+            logger.error(e.message)
+            raise e
+
         except Exception as e:
-            logger.error(f"Unexpected error: {str(e)}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error")
+            error_mapping = {
+                IntegrityError: ("BAD_USER_INPUT", "El correo ya está en uso"),
+                SQLAlchemyError: ("INTERNAL_SERVER_ERROR", "Error interno del servidor"),
+                ValueError: ("BAD_USER_INPUT", "Datos inválidos"),
+                PermissionError: ("FORBIDDEN", "Permiso denegado"),
+                FileNotFoundError: ("NOT_FOUND", "Archivo no encontrado"),
+                ConnectionError: ("TOO_MANY_REQUESTS", "Demasiadas solicitudes"),
+            }
+
+            extension_code, error_message = error_mapping.get(type(e), ("INTERNAL_SERVER_ERROR", "Error desconocido"))
+            logger.error(error_message)
+            raise GraphQLError(message=error_message, extensions={"code": extension_code})
