@@ -1,7 +1,9 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
 from passlib.context import CryptContext
 import datetime
 from app.models.base import Base
+from app.models.Country import Country
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -14,9 +16,14 @@ class User(Base):
     username = Column(String(50), index=True)
     email = Column(String(50), unique=True, index=True)
     password = Column(String(50))
+    professional_headline = Column(String(255))
+    city = Column(String(50))
+    country_id = Column(Integer, ForeignKey("countries.country_id"))
     status = Column(String(3))
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+
+    country = relationship("Country")
 
     @classmethod
     def verifyPassword(cls, plain_password, hashed_password):

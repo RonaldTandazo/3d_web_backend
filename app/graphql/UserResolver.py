@@ -12,12 +12,20 @@ class UserType:
     username: str
 
 @strawberry.input
-class UserInput:
+class RegisterInput:
     firstName: str
     lastName: str
     username: str
     email: str
     password: str
+
+@strawberry.input
+class ProfileInput:
+    firstName: str
+    lastName: str
+    professionalHeadline: str
+    countryId: int
+    city: str
 
 @strawberry.type
 class UserQuery:
@@ -36,7 +44,7 @@ class UserQuery:
 @strawberry.type
 class UserMutation:
     @strawberry.mutation
-    async def registerUser(self, info, user_data: UserInput) -> str:
+    async def registerUser(self, info, user_data: RegisterInput) -> str:
         db = info.context["db"]
         user_service = UserService(db)
         try:
@@ -57,7 +65,7 @@ class UserMutation:
             )
 
             if user.get("ok", False):
-                return "Usuario creado con éxito"
+                return "User Created Successfully"
             
             raise GraphQLError(message=user['error'], extensions={"code": "BAD_USER_INPUT"})
 
@@ -80,11 +88,47 @@ class UserMutation:
             raise GraphQLError(message=error_message, extensions={"code": extension_code})
 
     @strawberry.mutation
-    async def resetPassword(self, info, email: str) -> str:
+    async def profileUpdate(self, info, profile_update: ProfileInput) -> str:
         db = info.context["db"]
+        current_user = info.context["current_user"]
         user_service = UserService(db)
-        
-        return await "ssss"
+        try:
+            user = await user_service.getUserById(current_user.userId)
+            if not user.get("ok", False):
+                raise GraphQLError(message=user['error'], extensions={"code": "BAD_USER_INPUT"})
+
+            user=user.get("data")
+            update = await user_service.profileUpdate(
+                user,
+                profile_update.firstName, 
+                profile_update.lastName, 
+                profile_update.professionalHeadline, 
+                profile_update.city, 
+                profile_update.countryId
+            )
+
+            if update.get("ok", False):
+                return update.get("message")
+            
+            raise GraphQLError(message=update['error'], extensions={"code": "BAD_USER_INPUT"})
+
+        except GraphQLError as e:
+            logger.error(e.message)
+            raise e
+
+        except Exception as e:
+            error_mapping = {
+                IntegrityError: ("BAD_USER_INPUT", "El correo ya está en uso"),
+                SQLAlchemyError: ("INTERNAL_SERVER_ERROR", "Error interno del servidor"),
+                ValueError: ("BAD_USER_INPUT", "Datos inválidos"),
+                PermissionError: ("FORBIDDEN", "Permiso denegado"),
+                FileNotFoundError: ("NOT_FOUND", "Archivo no encontrado"),
+                ConnectionError: ("TOO_MANY_REQUESTS", "Demasiadas solicitudes"),
+            }
+
+            extension_code, error_message = error_mapping.get(type(e), ("INTERNAL_SERVER_ERROR", "Error desconocido"))
+            logger.error(error_message)
+            raise GraphQLError(message=error_message, extensions={"code": extension_code})
 
     @strawberry.mutation
     async def changePassword(self, info, currentPassword: str, newPassword: str) -> str:
@@ -92,7 +136,7 @@ class UserMutation:
         user_service = UserService(db)
         current_user = info.context["current_user"]
         try:
-            user = await user_service.getUserByUsername(current_user.username)
+            user = await user_service.getUserById(current_user.userId)
             if not user.get("ok", False):
                 raise GraphQLError(message=user['error'], extensions={"code": "BAD_USER_INPUT"})
 
