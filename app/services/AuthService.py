@@ -1,11 +1,13 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.User import User
+from app.models.Country import Country
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from app.config.logger import logger
-from sqlalchemy import and_
+from sqlalchemy import and_, join
 from fastapi import Depends
 from app.db.database import get_db
+from sqlalchemy.orm import aliased
 
 class AuthService:
     def __init__(self, db: AsyncSession = Depends(get_db)):
@@ -13,10 +15,17 @@ class AuthService:
 
     async def loginUser(self, username, password):
         try:
-            result = await self.db.execute(select(User).filter(and_(User.username == username, User.status == "A")))
-            user = result.scalars().first()
+            result = await self.db.execute(
+                select(User, Country.name.label("country_name"))
+                .join(Country, User.country_id == Country.country_id)
+                .filter(and_(User.username == username, User.status == "A"))
+            )
 
+            user = result.first()
             if user :
+                user, country_name = user
+                user.country_name = country_name
+
                 if User.verifyPassword(password, user.password):
                     return {"ok": True, "message": "Sign In Success", "code": 201, "data": user}
     

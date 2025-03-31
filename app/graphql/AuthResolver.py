@@ -34,6 +34,10 @@ class AuthMutation:
                     "lastName": data.last_name, 
                     "email": data.email, 
                     "username": data.username, 
+                    "professionalHeadline": data.professional_headline, 
+                    "city": data.city, 
+                    "countryId": data.country_id, 
+                    "location": data.city+", "+data.country_name,
                     "since": data.created_at.isoformat()
                 })
                 return AuthPayload(accessToken=token, tokenType="bearer")
