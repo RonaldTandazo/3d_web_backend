@@ -4,35 +4,35 @@ from app.models.Country import Country
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from app.config.logger import logger
-from sqlalchemy import and_, join
+from sqlalchemy import and_
 from fastapi import Depends
 from app.db.database import get_db
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import joinedload
 
 class AuthService:
-    def __init__(self, db: AsyncSession = Depends(get_db)):
+    def __init__(self, db: AsyncSession):
         self.db = db
 
     async def loginUser(self, username, password):
         try:
             result = await self.db.execute(
-                select(User, Country.name.label("country_name"))
-                .join(Country, User.country_id == Country.country_id)
+                select(User)
+                .options(joinedload(User.country))
                 .filter(and_(User.username == username, User.status == "A"))
             )
 
-            user = result.first()
+            user = result.scalar_one_or_none()
+            
             if user :
-                user, country_name = user
-                user.country_name = country_name
-
                 if User.verifyPassword(password, user.password):
+                    user.country_name = user.country.name
                     return {"ok": True, "message": "Sign In Success", "code": 201, "data": user}
     
                 return {"ok": False, "error": "Invalid Password", "code": 400}
 
             return {"ok": False, "error": "User Not Found", "code": 404}
         except Exception as e:
+            logger.error(e)
             error_mapping = {
                 IntegrityError: (400, "Database integrity error"),
                 SQLAlchemyError: (500, "Database error"),

@@ -26,19 +26,20 @@ class AuthMutation:
             user = await auth_service.loginUser(username, password)
 
             if user.get("ok", False):
-                data = user.get("data")
+                user_data = user.get("data")
+
                 token = createAccessToken(data={
-                    "sub": data.username,
-                    "userId": data.user_id,
-                    "firstName": data.first_name, 
-                    "lastName": data.last_name, 
-                    "email": data.email, 
-                    "username": data.username, 
-                    "professionalHeadline": data.professional_headline, 
-                    "city": data.city, 
-                    "countryId": data.country_id, 
-                    "location": data.city+", "+data.country_name,
-                    "since": data.created_at.isoformat()
+                    "sub": user_data.username,
+                    "userId": user_data.user_id,
+                    "firstName": user_data.first_name, 
+                    "lastName": user_data.last_name, 
+                    "email": user_data.email, 
+                    "username": user_data.username, 
+                    "professionalHeadline": user_data.professional_headline, 
+                    "city": user_data.city, 
+                    "countryId": user_data.country_id, 
+                    "location": user_data.city+", "+user_data.country_name,
+                    "since": user_data.created_at.isoformat()
                 })
                 return AuthPayload(accessToken=token, tokenType="bearer")
 

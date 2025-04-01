@@ -9,4 +9,4 @@ class SocialMedia(Base):
     name = Column(String(50), index=True, unique=True)
     status = Column(String(3))
     created_at = Column(DateTime, default=datetime.datetime.now)
-    updated_at = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    updated_at = Column(DateTime, onupdate=datetime.datetime.now)
