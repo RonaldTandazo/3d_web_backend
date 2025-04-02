@@ -5,12 +5,49 @@ from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import datetime
 from sqlalchemy.future import select
-from sqlalchemy import and_
+from sqlalchemy import and_, asc
 from sqlalchemy.orm import joinedload
 
 class UserSocialNetworkService:
     def __init__(self, db: AsyncSession):
         self.db = db
+        
+    async def getUserSocialMedia(self, userId):
+        try:            
+            result = await self.db.execute(
+                select(UserSocialNetwork)
+                .options(joinedload(UserSocialNetwork.socialMedia))
+                .filter(and_(UserSocialNetwork.user_id == userId, UserSocialNetwork.status == "A"))
+                .order_by(asc(UserSocialNetwork.user_social_network_id))
+            )
+
+            social_media_list = [
+                {
+                    "user_social_network_id": item.user_social_network_id,
+                    "social_media_id": item.social_media_id,
+                    "link": item.link,
+                    "network_name": item.socialMedia.name,
+                }
+                for item in result.scalars().all()
+            ]
+    
+            #if social_media_list:
+            return {"ok": True, "message": "User Social Media", "code": 201, "data": social_media_list}
+
+            #return {"ok": False, "error": "Social Media Not Found", "code": 404}
+        except Exception as e:
+            logger.error(e)
+            error_mapping = {
+                IntegrityError: (400, "Database integrity error"),
+                SQLAlchemyError: (500, "Database error"),
+                ValueError: (400, "Invalid input data"),
+                PermissionError: (401, "Unauthorized access"),
+                FileNotFoundError: (404, "Resource not found"),
+                ConnectionError: (429, "Too many requests"),
+            }
+
+            error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
+            return {"ok": False, "error": error_message, "code": error_code}
         
     async def store(self, userId, socialNetworkId, link, ip, terminal):
         try:            
@@ -41,30 +78,25 @@ class UserSocialNetworkService:
             error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
             return {"ok": False, "error": error_message, "code": error_code}
         
-    async def getUserSocialMedia(self, userId):
+    async def remove(self, userSocialNetowrkId):
         try:            
             result = await self.db.execute(
                 select(UserSocialNetwork)
-                .options(joinedload(UserSocialNetwork.socialMedia))
-                .filter(and_(UserSocialNetwork.user_id == userId, UserSocialNetwork.status == "A"))
+                .filter(and_(UserSocialNetwork.user_social_network_id == userSocialNetowrkId, UserSocialNetwork.status == "A"))
             )
+            item = result.scalars().first()
 
-            social_media_list = [
-                {
-                    "user_social_network_id": item.user_social_network_id,
-                    "social_media_id": item.social_media_id,
-                    "link": item.link,
-                    "network_name": item.socialMedia.name,
-                }
-                for item in result.scalars().all()
-            ]
-    
-            #if social_media_list:
-            return {"ok": True, "message": "User Social Media", "code": 201, "data": social_media_list}
+            if not item:
+                return {"ok": False, "error": "Social Network Not Linked", "code": 404}
 
-            #return {"ok": False, "error": "Social Media Not Found", "code": 404}
+            item.status="E"
+            item.updated_at=datetime.datetime.now()
+            #self.db.update(item)
+            await self.db.commit()
+
+            return {"ok": True, "message": "Social Network Unlinked", "code": 201, "data": item}
         except Exception as e:
-            logger.error(e)
+            logger.info(e)
             error_mapping = {
                 IntegrityError: (400, "Database integrity error"),
                 SQLAlchemyError: (500, "Database error"),

@@ -98,3 +98,43 @@ class UserSocialNetworkMutation:
             extension_code, error_message = error_mapping.get(type(e), ("INTERNAL_SERVER_ERROR", "Error desconocido"))
             logger.error(error_message)
             raise GraphQLError(message=error_message, extensions={"code": extension_code})
+        
+    @strawberry.mutation
+    async def removeUserSocialNetwork(self, info, userSocialNetworkId: int) -> str:
+        db = info.context["db"]
+        current_user = info.context["current_user"]
+        user_service = UserService(db)
+        usr_scl_ntw_service = UserSocialNetworkService(db)
+        try:
+            user = await user_service.getUserById(current_user.userId)
+            if not user.get("ok", False):
+                raise GraphQLError(message=user['error'], extensions={"code": "BAD_USER_INPUT"})
+
+            remove = await usr_scl_ntw_service.remove(
+                userSocialNetworkId
+            )
+
+            if remove.get("ok", False):
+                return remove.get("message")
+            
+            raise GraphQLError(message=remove['error'], extensions={"code": "BAD_USER_INPUT"})
+
+        except GraphQLError as e:
+            logger.error(e.message)
+            raise e
+
+        except Exception as e:
+            error_mapping = {
+                IntegrityError: ("BAD_USER_INPUT", "El correo ya está en uso"),
+                SQLAlchemyError: ("INTERNAL_SERVER_ERROR", "Error interno del servidor"),
+                ValueError: ("BAD_USER_INPUT", "Datos inválidos"),
+                PermissionError: ("FORBIDDEN", "Permiso denegado"),
+                FileNotFoundError: ("NOT_FOUND", "Archivo no encontrado"),
+                ConnectionError: ("TOO_MANY_REQUESTS", "Demasiadas solicitudes"),
+            }
+
+            extension_code, error_message = error_mapping.get(type(e), ("INTERNAL_SERVER_ERROR", "Error desconocido"))
+            logger.error(error_message)
+            raise GraphQLError(message=error_message, extensions={"code": extension_code})
+        
+
