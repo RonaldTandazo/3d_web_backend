@@ -1,12 +1,12 @@
 import strawberry
-from app.graphql.UserResolver import UserQuery, UserMutation
-from app.graphql.AuthResolver import AuthQuery, AuthMutation
-from app.graphql.CountryResolver import CountryQuery
-from app.graphql.SocialMediaResolver import SocialMediaQuery
-from app.graphql.UserSocialNetowrkResolver import UserSocialNetworkQuery, UserSocialNetworkMutation 
+from app.graphql.User.UserResolver import UserMutation
+from app.graphql.Authentication.AuthResolver import AuthQuery, AuthMutation
+from app.graphql.Country.CountryResolver import CountryQuery
+from app.graphql.SocialMedia.SocialMediaResolver import SocialMediaQuery
+from app.graphql.UserSocialNetwork.UserSocialNetowrkResolver import UserSocialNetworkQuery, UserSocialNetworkMutation 
 
 @strawberry.type
-class Query(AuthQuery, UserQuery, CountryQuery, SocialMediaQuery, UserSocialNetworkQuery):
+class Query(AuthQuery, CountryQuery, SocialMediaQuery, UserSocialNetworkQuery):
     pass
 
 @strawberry.type

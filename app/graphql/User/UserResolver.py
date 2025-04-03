@@ -1,45 +1,9 @@
 import strawberry
 from app.services.UserService import UserService
-from fastapi import HTTPException, status
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from strawberry.exceptions import GraphQLError
-
-@strawberry.type
-class UserType:
-    id: int
-    email: str
-    username: str
-
-@strawberry.input
-class RegisterInput:
-    firstName: str
-    lastName: str
-    username: str
-    email: str
-    password: str
-
-@strawberry.input
-class ProfileInput:
-    firstName: str
-    lastName: str
-    professionalHeadline: str
-    countryId: int
-    city: str
-
-@strawberry.type
-class UserQuery:
-    @strawberry.field
-    async def getUserProfile(self, info) -> UserType:
-        current_user = info.context["current_user"]
-        db = info.context["db"]
-        user_service = UserService(db)
-
-        user = await user_service.getUserByEmail(current_user.email)
-
-        if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")    
-        return user
+from app.graphql.User.UserInputs import ProfileInput, RegisterInput
 
 @strawberry.type
 class UserMutation:

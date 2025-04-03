@@ -4,11 +4,7 @@ from app.config.logger import logger
 from app.security.AuthGraph import createAccessToken
 from strawberry.exceptions import GraphQLError
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-
-@strawberry.type
-class AuthPayload:
-    accessToken: str
-    tokenType: str
+from app.graphql.Authentication.AuthPayloads import AuthPayload
 
 @strawberry.type
 class AuthQuery:

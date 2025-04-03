@@ -49,6 +49,32 @@ class UserSocialNetworkService:
             error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
             return {"ok": False, "error": error_message, "code": error_code}
         
+    async def getUserSocialMediaById(self, userSocialNetworkId):
+        try:            
+            result = await self.db.execute(
+                select(UserSocialNetwork)
+                .filter(and_(UserSocialNetwork.user_social_network_id == userSocialNetworkId, UserSocialNetwork.status == "A"))
+            )
+            item = result.scalars().first()
+
+            if not item:
+                return {"ok": False, "error": "Social Network Not Found", "code": 404}
+
+            return {"ok": True, "message": "Social Network Found", "code": 201, "data": item}
+        except Exception as e:
+            logger.error(e)
+            error_mapping = {
+                IntegrityError: (400, "Database integrity error"),
+                SQLAlchemyError: (500, "Database error"),
+                ValueError: (400, "Invalid input data"),
+                PermissionError: (401, "Unauthorized access"),
+                FileNotFoundError: (404, "Resource not found"),
+                ConnectionError: (429, "Too many requests"),
+            }
+
+            error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
+            return {"ok": False, "error": error_message, "code": error_code}
+        
     async def store(self, userId, socialNetworkId, link, ip, terminal):
         try:            
             item = UserSocialNetwork(
@@ -78,20 +104,32 @@ class UserSocialNetworkService:
             error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
             return {"ok": False, "error": error_message, "code": error_code}
         
-    async def remove(self, userSocialNetowrkId):
+    async def update(self, item:UserSocialNetwork, socialNetworkId, link):
         try:            
-            result = await self.db.execute(
-                select(UserSocialNetwork)
-                .filter(and_(UserSocialNetwork.user_social_network_id == userSocialNetowrkId, UserSocialNetwork.status == "A"))
-            )
-            item = result.scalars().first()
+            item.social_media_id = socialNetworkId
+            item.link = link
+            item.updated_at=datetime.datetime.now()
+            await self.db.commit()
 
-            if not item:
-                return {"ok": False, "error": "Social Network Not Linked", "code": 404}
+            return {"ok": True, "message": "Social Network Stored", "code": 201, "data": item}
+        except Exception as e:
+            logger.info(e)
+            error_mapping = {
+                IntegrityError: (400, "Database integrity error"),
+                SQLAlchemyError: (500, "Database error"),
+                ValueError: (400, "Invalid input data"),
+                PermissionError: (401, "Unauthorized access"),
+                FileNotFoundError: (404, "Resource not found"),
+                ConnectionError: (429, "Too many requests"),
+            }
 
+            error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
+            return {"ok": False, "error": error_message, "code": error_code}
+        
+    async def remove(self, item:UserSocialNetwork):
+        try:            
             item.status="E"
             item.updated_at=datetime.datetime.now()
-            #self.db.update(item)
             await self.db.commit()
 
             return {"ok": True, "message": "Social Network Unlinked", "code": 201, "data": item}

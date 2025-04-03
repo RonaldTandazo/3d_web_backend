@@ -1,29 +1,25 @@
 import strawberry
-from app.services.SocialMediaService import SocialMediaService
+from app.services.CountryService import CountryService
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from strawberry.exceptions import GraphQLError
+from app.graphql.Country.CountryPayloads import CountryPayload
 
 @strawberry.type
-class SocialMediaPayload:
-    socialMediaId: int
-    name: str
-
-@strawberry.type
-class SocialMediaQuery:
+class CountryQuery:
     @strawberry.field
-    async def getSocialMedia(self, info) -> list[SocialMediaPayload]:
+    async def getCountries(self, info) -> list[CountryPayload]:
         db = info.context["db"]
-        social_media_service = SocialMediaService(db)
+        country_Service = CountryService(db)
         try:
-            social_media = await social_media_service.getSocialMedia()
+            countries = await country_Service.getCountries()
 
-            if not social_media.get("ok", False):
-                raise GraphQLError(message=social_media['error'], extensions={"code": "BAD_USER_INPUT"})
+            if not countries.get("ok", False):
+                raise GraphQLError(message=countries['error'], extensions={"code": "BAD_USER_INPUT"})
             
-            social_media = social_media.get("data")
+            countries = countries.get("data")
 
-            return [SocialMediaPayload(socialMediaId=network.social_media_id, name=network.name) for network in social_media]
+            return [CountryPayload(countryId=country.country_id, name=country.name) for country in countries]
         except GraphQLError as e:
             logger.error(e.message)
             raise e
