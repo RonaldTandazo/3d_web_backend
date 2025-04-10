@@ -35,7 +35,7 @@ async def get_context(
     if request.method == "POST":
         try:
             body = await request.json()
-            operation_name = body.get("operationName")
+            operation_name = body.get("operationName")  
         except json.JSONDecodeError:
             pass
     

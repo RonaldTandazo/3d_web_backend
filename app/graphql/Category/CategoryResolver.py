@@ -1,25 +1,25 @@
 import strawberry
-from app.services.SocialMediaService import SocialMediaService
+from app.services.CategoryService import CategoryService
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from strawberry.exceptions import GraphQLError
-from app.graphql.SocialMedia.SocialMediaPayloads import SocialMediaPayload
+from app.graphql.Category.CategoryPayloads import CategoryPayload
 
 @strawberry.type
-class SocialMediaQuery:
+class CategoryQuery:
     @strawberry.field
-    async def getSocialMedia(self, info) -> list[SocialMediaPayload]:
+    async def getCategories(self, info) -> list[CategoryPayload]:
         db = info.context["db"]
-        social_media_service = SocialMediaService(db)
+        category_Service = CategoryService(db)
         try:
-            social_media = await social_media_service.getSocialMedia()
+            categories = await category_Service.getCategories()
 
-            if not social_media.get("ok", False):
-                raise GraphQLError(message=social_media['error'], extensions={"code": "BAD_USER_INPUT"})
+            if not categories.get("ok", False):
+                raise GraphQLError(message=categories['error'], extensions={"code": "BAD_USER_INPUT"})
             
-            social_media = social_media.get("data")
+            categories = categories.get("data")
 
-            return [SocialMediaPayload(socialMediaId=network.social_media_id, name=network.name) for network in social_media]
+            return [CategoryPayload(categoryId=category.category_id, name=category.name) for category in categories]
         except GraphQLError as e:
             logger.error(e.message)
             raise e

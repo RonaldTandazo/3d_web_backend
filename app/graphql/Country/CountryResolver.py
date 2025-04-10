@@ -26,7 +26,7 @@ class CountryQuery:
 
         except Exception as e:
             error_mapping = {
-                IntegrityError: ("BAD_USER_INPUT", "El correo ya está en uso"),
+                IntegrityError: ("BAD_USER_INPUT", "E-mail already in used"),
                 SQLAlchemyError: ("INTERNAL_SERVER_ERROR", "Error interno del servidor"),
                 ValueError: ("BAD_USER_INPUT", "Datos inválidos"),
                 PermissionError: ("FORBIDDEN", "Permiso denegado"),
