@@ -5,9 +5,10 @@ from app.graphql.Country.CountryResolver import CountryQuery
 from app.graphql.SocialMedia.SocialMediaResolver import SocialMediaQuery
 from app.graphql.UserSocialNetwork.UserSocialNetowrkResolver import UserSocialNetworkQuery, UserSocialNetworkMutation
 from app.graphql.Category.CategoryResolver import  CategoryQuery
+from app.graphql.Publishing.PublishingResolver import PublishingQuery
 
 @strawberry.type
-class Query(AuthQuery, CountryQuery, SocialMediaQuery, UserSocialNetworkQuery, CategoryQuery):
+class Query(AuthQuery, CountryQuery, SocialMediaQuery, UserSocialNetworkQuery, CategoryQuery, PublishingQuery):
     pass
 
 @strawberry.type
