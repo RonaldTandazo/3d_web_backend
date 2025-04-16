@@ -5,6 +5,7 @@ from strawberry.exceptions import GraphQLError
 from app.graphql.Artwork.ArtworkInputs import StoreArtworkInput
 from app.services.ArtworkService import ArtworkService
 from app.services.ArtworkOwnerService import ArtworkOwnerService
+from app.services.ArtworkThumbnailService import ArtworkThumbnailService
 from app.utils.helpers import Helpers
 
 @strawberry.type
@@ -16,6 +17,7 @@ class ArtworkMutation:
         request = info.context["request"]
         artwork_service = ArtworkService(db)
         artwork_owner_service = ArtworkOwnerService(db)
+        artwork_thmb_service = ArtworkThumbnailService(db)
         ip = await Helpers.getIp(request)
         terminal = await Helpers.getRequestAgents(request)
         try:
@@ -43,6 +45,25 @@ class ArtworkMutation:
             if not store_artwork_owner.get("ok", False):
                 raise GraphQLError(message=store_artwork_owner['error'], extensions={"code": "BAD_USER_INPUT"})
             
+            if artworkData.thumbnail and artworkData.thumbnail != '':
+                thumbnail_name = artworkData.title+" Thumbnail"
+                filename = await Helpers.generateRandomFilename(".jpeg")
+                thumbnail_store = await Helpers.decodedAndSaveImg(filename, artworkData.thumbnail, "thumbnail")
+
+                if not thumbnail_store.get("ok", False):
+                    raise GraphQLError(message=thumbnail_store['error'], extensions={"code": "INTERNAL_SERVER_ERROR"})
+
+                store_artwork_thumbnail = await artwork_thmb_service.store(
+                    artwork.artwork_id, 
+                    filename, 
+                    thumbnail_name,
+                    ip,
+                    terminal
+                )
+
+                if not store_artwork_thumbnail.get("ok", False):
+                    raise GraphQLError(message=store_artwork_thumbnail['error'], extensions={"code": "INTERNAL_SERVER_ERROR"})
+
             return store_artwork["message"]
 
         except GraphQLError as e:
