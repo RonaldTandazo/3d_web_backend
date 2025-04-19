@@ -1,6 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.UserSocialNetwork import UserSocialNetwork
-from app.models.SocialMedia import SocialMedia
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import datetime

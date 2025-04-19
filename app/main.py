@@ -6,10 +6,14 @@ from app.security.AuthGraph import getCurrentUserFromToken
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.middleware.cors import CORSMiddleware
 from strawberry.exceptions import GraphQLError
+from fastapi.staticfiles import StaticFiles
 from app.config.logger import logger
 import json
 
+
 app = FastAPI()
+
+app.mount("/thumbnails", StaticFiles(directory="app/public/artworks/thumbnails"), name="thumbnails")
 
 app.add_middleware(
     CORSMiddleware,

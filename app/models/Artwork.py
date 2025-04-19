@@ -19,3 +19,4 @@ class Artwork(Base):
     updated_at = Column(DateTime, onupdate=datetime.datetime.now)
 
     publishing = relationship("Publishing")
+    artwork_thumbnail = relationship("ArtworkThumbnail", back_populates="artwork", uselist=False)

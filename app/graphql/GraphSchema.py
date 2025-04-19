@@ -7,10 +7,10 @@ from app.graphql.UserSocialNetwork.UserSocialNetowrkResolver import UserSocialNe
 from app.graphql.Category.CategoryResolver import  CategoryQuery
 from app.graphql.Publishing.PublishingResolver import PublishingQuery
 from app.graphql.Software.SoftwareResolver import SoftwareQuery
-from app.graphql.Artwork.ArtworkResolver import ArtworkMutation
+from app.graphql.Artwork.ArtworkResolver import ArtworkMutation, ArtworkQuery
 
 @strawberry.type
-class Query(AuthQuery, CountryQuery, SocialMediaQuery, UserSocialNetworkQuery, CategoryQuery, PublishingQuery, SoftwareQuery):
+class Query(AuthQuery, CountryQuery, SocialMediaQuery, UserSocialNetworkQuery, CategoryQuery, PublishingQuery, SoftwareQuery, ArtworkQuery):
     pass
 
 @strawberry.type
