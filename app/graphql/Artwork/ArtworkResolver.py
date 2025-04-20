@@ -100,7 +100,7 @@ class ArtworkQuery:
             
             artworks = artworks.get("data")
 
-            return [ArtworkPayload(artworkId=artwork['artwork_id'], title=artwork['title'], thumbnail=artwork['thumbnail'], owner=artwork['owner']) for artwork in artworks]
+            return [ArtworkPayload(artworkId=artwork['artwork_id'], title=artwork['title'], thumbnail=artwork['thumbnail'], publishingId=artwork['publishingId'], owner=artwork['owner'], createdAt=artwork['createdAt']) for artwork in artworks]
         except GraphQLError as e:
             logger.error(e.message)
             raise e

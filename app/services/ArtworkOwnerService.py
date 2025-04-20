@@ -47,6 +47,8 @@ class ArtworkOwnerService:
                 select(
                     Artwork.artwork_id.label("artwork_id"),
                     Artwork.title.label("title"),
+                    Artwork.publishing_id.label("publishingId"),
+                    Artwork.created_at.label("createdAt"),
                     ArtworkThumbnail.filename.label("thumbnail"),
                     User.username.label("owner")
                 )
@@ -65,6 +67,8 @@ class ArtworkOwnerService:
                     "artwork_id": row.artwork_id,
                     "title": row.title,
                     "thumbnail": row.thumbnail,
+                    "publishingId": row.publishingId,
+                    "createdAt": row.createdAt,
                     "owner": row.owner,
                 }
                 for row in rows
