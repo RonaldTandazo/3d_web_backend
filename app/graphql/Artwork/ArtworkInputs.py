@@ -7,6 +7,7 @@ class StoreArtworkInput:
     description: Optional[str] = None
     matureContent: Optional[bool] = None
     categories: Optional[list[int]] = None
+    topics: Optional[list[int]] = None
     softwares: Optional[list[int]] = None
     thumbnail: Optional[str] = None
     publishing: Optional[int] = None

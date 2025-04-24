@@ -1,5 +1,5 @@
 import strawberry
-from app.services.SocialMediaService import SocialMediaService
+from app.services.General.SocialMediaService import SocialMediaService
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from strawberry.exceptions import GraphQLError

@@ -3,6 +3,7 @@ from strawberry.fastapi import GraphQLRouter
 from app.graphql.GraphSchema import GraphSchema 
 from app.db.database import get_db
 from app.security.AuthGraph import getCurrentUserFromToken
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.middleware.cors import CORSMiddleware
 from strawberry.exceptions import GraphQLError
@@ -35,7 +36,6 @@ async def get_context(
     body = None
     operation_name = None
 
-
     if request.method == "POST":
         try:
             body = await request.json()
@@ -54,5 +54,8 @@ async def get_context(
 
     return {"current_user": current_user, "db": db, "request": request, "body": body}
 
-graphql_app = GraphQLRouter(GraphSchema, context_getter=get_context)
+graphql_app = GraphQLRouter(schema=GraphSchema, context_getter=get_context, subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL])
 app.include_router(graphql_app, prefix="/graphql", tags=["graphql"])
+
+graphql_ws_router = GraphQLRouter(schema=GraphSchema, subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL])
+app.include_router(graphql_ws_router, prefix="/graphql/ws", tags=["graphql_ws"])

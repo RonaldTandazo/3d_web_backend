@@ -1,23 +1,23 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.models.Country import Country
+from app.models.General.Publishing import Publishing
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import asc
 
-class CountryService:
+class PublishingService:
     def __init__(self, db: AsyncSession):
         self.db = db
         
-    async def getCountries(self):
+    async def getCategories(self):
         try:
-            result = await self.db.execute(select(Country).filter(Country.status == "A").order_by(asc(Country.name)))
-            countries = result.scalars().all()
+            result = await self.db.execute(select(Publishing).filter(Publishing.status == "A").order_by(asc(Publishing.name)))
+            publishing = result.scalars().all()
 
-            if not countries:
-                return {"ok": False, "error": "Countries Not Found", "code": 404}
+            if not publishing:
+                return {"ok": False, "error": "Publishing Options Not Found", "code": 404}
 
-            return {"ok": True, "message": "Countries Found", "code": 201, "data": countries}
+            return {"ok": True, "message": "Publishing Options Found", "code": 201, "data": publishing}
         except Exception as e:
             error_mapping = {
                 IntegrityError: (400, "Database integrity error"),

@@ -1,29 +1,23 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.ArtworkThumbnail import ArtworkThumbnail
+from sqlalchemy.future import select
+from app.models.General.Country import Country
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-import datetime
+from sqlalchemy import asc
 
-class ArtworkThumbnailService:
+class CountryService:
     def __init__(self, db: AsyncSession):
         self.db = db
-
-    async def store(self, artworkId, filename, thumbnail_name, ip, terminal):
+        
+    async def getCountries(self):
         try:
-            artwork_user = ArtworkThumbnail(
-                artwork_id=artworkId,
-                filename=filename,
-                thumbnail_name=thumbnail_name,
-                status="A",
-                ip=ip,
-                terminal=terminal,
-                created_at=datetime.datetime.now()
-            )
-            self.db.add(artwork_user)
-            await self.db.commit()
+            result = await self.db.execute(select(Country).filter(Country.status == "A").order_by(asc(Country.name)))
+            countries = result.scalars().all()
 
-            return {"ok": True, "message": "Artwork Thumbnail Saved Successfully", "code": 201, "data": artwork_user}
+            if not countries:
+                return {"ok": False, "error": "Countries Not Found", "code": 404}
 
+            return {"ok": True, "message": "Countries Found", "code": 201, "data": countries}
         except Exception as e:
             error_mapping = {
                 IntegrityError: (400, "Database integrity error"),

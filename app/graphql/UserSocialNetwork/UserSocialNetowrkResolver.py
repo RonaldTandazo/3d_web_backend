@@ -1,6 +1,6 @@
 import strawberry
-from app.services.UserService import UserService
-from app.services.UserSocialNetworkService import UserSocialNetworkService 
+from app.services.User.UserService import UserService
+from app.services.User.UserSocialNetworkService import UserSocialNetworkService 
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from strawberry.exceptions import GraphQLError

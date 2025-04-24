@@ -1,25 +1,25 @@
 import strawberry
-from app.services.General.CountryService import CountryService
+from app.services.General.TopicService import TopicService
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from strawberry.exceptions import GraphQLError
-from app.graphql.Country.CountryPayloads import CountryPayload
+from app.graphql.Topic.TopicPayloads import TopicPayload
 
 @strawberry.type
-class CountryQuery:
+class TopicQuery:
     @strawberry.field
-    async def getCountries(self, info) -> list[CountryPayload]:
+    async def getTopics(self, info) -> list[TopicPayload]:
         db = info.context["db"]
-        country_Service = CountryService(db)
+        topic_Service = TopicService(db)
         try:
-            countries = await country_Service.getCountries()
+            topics = await topic_Service.getTopics()
 
-            if not countries.get("ok", False):
-                raise GraphQLError(message=countries['error'], extensions={"code": "BAD_USER_INPUT"})
+            if not topics.get("ok", False):
+                raise GraphQLError(message=topics['error'], extensions={"code": "BAD_USER_INPUT"})
             
-            countries = countries.get("data")
+            topics = topics.get("data")
 
-            return [CountryPayload(countryId=country.country_id, name=country.name) for country in countries]
+            return [TopicPayload(topicId=topic.topic_id, name=topic.name) for topic in topics]
         except GraphQLError as e:
             logger.error(e.message)
             raise e

@@ -1,12 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.User import User
-from app.models.Country import Country
+from app.models.Users.User import User
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from app.config.logger import logger
 from sqlalchemy import and_
-from fastapi import Depends
-from app.db.database import get_db
 from sqlalchemy.orm import joinedload
 
 class AuthService:

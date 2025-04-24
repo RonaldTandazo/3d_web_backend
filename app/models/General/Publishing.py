@@ -1,14 +1,14 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.dialects.postgresql import JSONB
-from app.models.base import Base
 import datetime
+from app.models.base import Base
 
-class Software(Base):
-    __tablename__ = "softwares"
+class Publishing(Base):
+    __tablename__ = "publishing"
 
-    software_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    publishing_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String(50), index=True, unique=True)
-    status = Column(String(3))
+    status = Column(String(3), default="A")
     ip = Column(String(20))
     terminal = Column(JSONB)
     created_at = Column(DateTime, default=datetime.datetime.now)

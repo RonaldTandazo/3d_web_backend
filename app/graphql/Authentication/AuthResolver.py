@@ -1,5 +1,5 @@
 import strawberry
-from app.services.AuthService import AuthService
+from app.services.Authentication.AuthService import AuthService
 from app.config.logger import logger
 from app.security.AuthGraph import createAccessToken
 from strawberry.exceptions import GraphQLError

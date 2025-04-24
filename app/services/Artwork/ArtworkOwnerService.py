@@ -1,13 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.ArtworkOwner import ArtworkOwner
-from app.models.Artwork import Artwork
-from app.models.User import User
-from app.models.ArtworkThumbnail import ArtworkThumbnail
+from app.models.Artworks.ArtworkOwner import ArtworkOwner
+from app.models.Artworks.Artwork import Artwork
+from app.models.Users.User import User
+from app.models.Artworks.ArtworkThumbnail import ArtworkThumbnail
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.future import select
 from sqlalchemy import and_, asc
-import datetime
 
 class ArtworkOwnerService:
     def __init__(self, db: AsyncSession):
@@ -18,10 +17,8 @@ class ArtworkOwnerService:
             artwork_user = ArtworkOwner(
                 artwork_id=artworkId,
                 user_id=userId,
-                status="A",
                 ip=ip,
-                terminal=terminal,
-                created_at=datetime.datetime.now()
+                terminal=terminal
             )
             self.db.add(artwork_user)
             await self.db.commit()

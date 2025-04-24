@@ -4,15 +4,16 @@ from sqlalchemy.orm import relationship
 from app.models.base import Base
 import datetime
 
+
 class Artwork(Base):
     __tablename__ = "artworks"
 
     artwork_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    title = Column(String(50), index=True, unique=True)
+    title = Column(String(50), index=True)
     description = Column(String(255))
     mature_content = Column(Boolean)
     publishing_id = Column(Integer, ForeignKey("publishing.publishing_id"))
-    status = Column(String(3))
+    status = Column(String(3), default="A")
     ip = Column(String(20))
     terminal = Column(JSONB)
     created_at = Column(DateTime, default=datetime.datetime.now)
@@ -20,3 +21,6 @@ class Artwork(Base):
 
     publishing = relationship("Publishing")
     artwork_thumbnail = relationship("ArtworkThumbnail", back_populates="artwork", uselist=False)
+    artwork_categories = relationship("ArtworkCategory", back_populates="artwork", uselist=True)
+    artwork_softwares = relationship("ArtworkSoftware", back_populates="artwork", uselist=True)
+    artwork_topics = relationship("ArtworkTopic", back_populates="artwork", uselist=True)

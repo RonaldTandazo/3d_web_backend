@@ -1,24 +1,31 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from app.models.Publishing import Publishing
+from app.models.Artworks.ArtworkSoftware import ArtworkSoftware
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from sqlalchemy import asc
 
-class PublishingService:
+class ArtworkSoftwareService:
     def __init__(self, db: AsyncSession):
         self.db = db
-        
-    async def getCategories(self):
+
+    async def store(self, artworkId, softwareIds, ip, terminal):
         try:
-            result = await self.db.execute(select(Publishing).filter(Publishing.status == "A").order_by(asc(Publishing.name)))
-            publishing = result.scalars().all()
+            artwork_softwares = []
+            for software_id in softwareIds:
+                artwork_software = ArtworkSoftware(
+                    artwork_id=artworkId,
+                    software_id=software_id,
+                    ip=ip,
+                    terminal=terminal
+                )
+                artwork_softwares.append(artwork_software)
+            
+            self.db.add_all(artwork_softwares)
+            await self.db.commit()
 
-            if not publishing:
-                return {"ok": False, "error": "Publishing Options Not Found", "code": 404}
+            return {"ok": True, "message": "Artwork Softwares Saved Successfully", "code": 201, "data": artwork_softwares}
 
-            return {"ok": True, "message": "Publishing Options Found", "code": 201, "data": publishing}
         except Exception as e:
+            logger.info(e)
             error_mapping = {
                 IntegrityError: (400, "Database integrity error"),
                 SQLAlchemyError: (500, "Database error"),

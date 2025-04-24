@@ -1,5 +1,5 @@
 import strawberry
-from app.services.CategoryService import CategoryService
+from app.services.General.CategoryService import CategoryService
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from strawberry.exceptions import GraphQLError

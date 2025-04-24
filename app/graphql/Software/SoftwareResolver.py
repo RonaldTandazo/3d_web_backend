@@ -1,5 +1,5 @@
 import strawberry
-from app.services.SoftwareService import SoftwareService
+from app.services.General.SoftwareService import SoftwareService
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from strawberry.exceptions import GraphQLError

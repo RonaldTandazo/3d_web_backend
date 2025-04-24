@@ -3,7 +3,6 @@ from sqlalchemy.orm import relationship
 from passlib.context import CryptContext
 import datetime
 from app.models.base import Base
-from app.models.Country import Country
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -19,7 +18,7 @@ class User(Base):
     professional_headline = Column(String(255))
     city = Column(String(50))
     country_id = Column(Integer, ForeignKey("countries.country_id"))
-    status = Column(String(3))
+    status = Column(String(3), default="A")
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now)
 

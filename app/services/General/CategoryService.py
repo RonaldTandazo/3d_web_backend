@@ -1,30 +1,23 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.Artwork import Artwork
+from sqlalchemy.future import select
+from app.models.General.Category import Category
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-import datetime
+from sqlalchemy import asc
 
-class ArtworkService:
+class CategoryService:
     def __init__(self, db: AsyncSession):
         self.db = db
-
-    async def store(self, title, description, matureContent, ip, terminal, publishing = 3):
+        
+    async def getCategories(self):
         try:
-            artwork = Artwork(
-                title=title,
-                description=description,
-                mature_content=matureContent,
-                publishing_id=publishing,
-                status="A",
-                ip=ip,
-                terminal=terminal,
-                created_at=datetime.datetime.now()
-            )
-            self.db.add(artwork)
-            await self.db.commit()
+            result = await self.db.execute(select(Category).filter(Category.status == "A").order_by(asc(Category.name)))
+            categories = result.scalars().all()
 
-            return {"ok": True, "message": "Artwork Saved Successfully", "code": 201, "data": artwork}
+            if not categories:
+                return {"ok": False, "error": "Categories Not Found", "code": 404}
 
+            return {"ok": True, "message": "Categories Found", "code": 201, "data": categories}
         except Exception as e:
             error_mapping = {
                 IntegrityError: (400, "Database integrity error"),
