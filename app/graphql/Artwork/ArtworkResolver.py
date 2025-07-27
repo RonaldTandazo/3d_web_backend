@@ -2,16 +2,24 @@ import strawberry
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from strawberry.exceptions import GraphQLError
+from app.utils.helpers import Helpers
+import asyncio
 from app.graphql.Artwork.ArtworkInputs import StoreArtworkInput
-from app.graphql.Artwork.ArtworkPayloads import ArtworkPayload
+from app.graphql.Artwork.ArtworkPayloads import ArtworkPayload, ArtworkDetailsPayload, ArtworkFormData
 from app.services.Artwork.ArtworkService import ArtworkService
 from app.services.Artwork.ArtworkOwnerService import ArtworkOwnerService
 from app.services.Artwork.ArtworkThumbnailService import ArtworkThumbnailService
 from app.services.Artwork.ArtworkCategoryService import ArtworkCategoryService
 from app.services.Artwork.ArtworkSoftwareService import ArtworkSoftwareService
 from app.services.Artwork.ArtworkTopicService import ArtworkTopicService
-from app.utils.helpers import Helpers
-import asyncio
+from app.services.General.CategoryService import CategoryService
+from app.services.General.TopicService import TopicService
+from app.services.General.SoftwareService import SoftwareService
+from app.services.General.PublishingService import PublishingService
+from app.graphql.Category.CategoryPayloads import CategoryPayload
+from app.graphql.Topic.TopicPayloads import TopicPayload
+from app.graphql.Software.SoftwarePayloads import SoftwarePayload
+from app.graphql.Publishing.PublishingPayloads import PublishingPayload
 from typing import AsyncGenerator
 
 @strawberry.type
@@ -42,6 +50,7 @@ class ArtworkMutation:
         
         ip = await Helpers.getIp(request)
         terminal = await Helpers.getRequestAgents(request)
+        filename = None
         try:
             store_artwork = await awk_service.store(
                 artworkData.title,
@@ -104,7 +113,6 @@ class ArtworkMutation:
                 thumbnail_name = artworkData.title+" Thumbnail"
                 filename = await Helpers.generateRandomFilename(".jpeg")
                 thumbnail_store = await Helpers.decodedAndSaveImg(filename, artworkData.thumbnail, "thumbnail")
-
                 if not thumbnail_store.get("ok", False):
                     raise GraphQLError(message=thumbnail_store['error'], extensions={"code": "INTERNAL_SERVER_ERROR"})
 
@@ -164,6 +172,103 @@ class ArtworkQuery:
             artworks = artworks.get("data")
 
             return [ArtworkPayload(artworkId=artwork['artwork_id'], title=artwork['title'], thumbnail=artwork['thumbnail'], publishingId=artwork['publishingId'], owner=artwork['owner'], createdAt=artwork['createdAt']) for artwork in artworks]
+        except GraphQLError as e:
+            logger.error(e.message)
+            raise e
+
+        except Exception as e:
+            error_mapping = {
+                IntegrityError: ("BAD_USER_INPUT", "E-mail already in used"),
+                SQLAlchemyError: ("INTERNAL_SERVER_ERROR", "Error interno del servidor"),
+                ValueError: ("BAD_USER_INPUT", "Datos inválidos"),
+                PermissionError: ("FORBIDDEN", "Permiso denegado"),
+                FileNotFoundError: ("NOT_FOUND", "Archivo no encontrado"),
+                ConnectionError: ("TOO_MANY_REQUESTS", "Demasiadas solicitudes"),
+            }
+
+            extension_code, error_message = error_mapping.get(type(e), ("INTERNAL_SERVER_ERROR", "Error desconocido"))
+            logger.error(error_message)
+            raise GraphQLError(message=error_message, extensions={"code": extension_code})
+        
+    @strawberry.field
+    async def getArtworkDetails(self, info, artworkId: int) -> ArtworkDetailsPayload:
+        db = info.context["db"]
+        awk_service = ArtworkService(db)
+        try:
+            artwork = await awk_service.getArtworkDetails(artworkId)
+
+            if not artwork.get("ok", False):
+                raise GraphQLError(message=artwork['error'], extensions={"code": "NOT_FOUND"})
+            
+            artwork = artwork.get("data")
+
+            return ArtworkDetailsPayload(
+                artworkId=artwork['artwork_id'], 
+                title=artwork['title'], 
+                description=artwork['description'], 
+                matureContent=artwork['mature_content'], 
+                categories=artwork['categories'], 
+                topics=artwork['topics'], 
+                softwares=artwork['softwares'],
+                publishingId=artwork['publishing_id'], 
+                thumbnail=artwork['thumbnail'], 
+                createdAt=artwork['created_at']
+            )
+        except GraphQLError as e:
+            logger.error(e.message)
+            raise e
+
+        except Exception as e:
+            error_mapping = {
+                IntegrityError: ("BAD_USER_INPUT", "E-mail already in used"),
+                SQLAlchemyError: ("INTERNAL_SERVER_ERROR", "Error interno del servidor"),
+                ValueError: ("BAD_USER_INPUT", "Datos inválidos"),
+                PermissionError: ("FORBIDDEN", "Permiso denegado"),
+                FileNotFoundError: ("NOT_FOUND", "Archivo no encontrado"),
+                ConnectionError: ("TOO_MANY_REQUESTS", "Demasiadas solicitudes"),
+            }
+
+            extension_code, error_message = error_mapping.get(type(e), ("INTERNAL_SERVER_ERROR", "Error desconocido"))
+            logger.error(error_message)
+            raise GraphQLError(message=error_message, extensions={"code": extension_code})
+        
+    @strawberry.field
+    async def getArtworkFormData(self, info) ->ArtworkFormData:
+        db = info.context["db"]
+        ctg_service = CategoryService(db)
+        tpc_service = TopicService(db)
+        sft_service = SoftwareService(db)
+        pbl_service = PublishingService(db)
+        try:
+            categories = await ctg_service.getCategories()
+            categories = categories.get("data") if categories.get("ok") else []
+            categories = [
+                CategoryPayload(categoryId=item.category_id, name=item.name)
+                for item in categories
+            ]
+
+            topics = await tpc_service.getTopics()
+            topics = topics.get("data") if topics.get("ok") else []
+            topics = [
+                TopicPayload(topicId=item.topic_id, name=item.name)
+                for item in topics
+            ]
+
+            softwares = await sft_service.getSoftware()
+            softwares = softwares.get("data") if softwares.get("ok") else []
+            softwares = [
+                SoftwarePayload(softwareId=item.software_id, name=item.name)
+                for item in softwares
+            ]
+
+            publishing = await pbl_service.getPublishing()
+            publishing = publishing.get("data") if publishing.get("ok") else []
+            publishing = [
+                PublishingPayload(publishingId=item.publishing_id, name=item.name)
+                for item in publishing
+            ]
+
+            return ArtworkFormData(categories=categories, topics=topics, softwares=softwares, publishing=publishing)
         except GraphQLError as e:
             logger.error(e.message)
             raise e

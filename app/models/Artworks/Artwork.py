@@ -21,6 +21,21 @@ class Artwork(Base):
 
     publishing = relationship("Publishing")
     artwork_thumbnail = relationship("ArtworkThumbnail", back_populates="artwork", uselist=False)
-    artwork_categories = relationship("ArtworkCategory", back_populates="artwork", uselist=True)
-    artwork_softwares = relationship("ArtworkSoftware", back_populates="artwork", uselist=True)
-    artwork_topics = relationship("ArtworkTopic", back_populates="artwork", uselist=True)
+    artwork_categories = relationship(
+        "ArtworkCategory", 
+        back_populates="artwork", 
+        primaryjoin="and_(Artwork.artwork_id == ArtworkCategory.artwork_id, ArtworkCategory.status == 'A')",
+        uselist=True
+    )
+    artwork_softwares = relationship(
+        "ArtworkSoftware", 
+        back_populates="artwork", 
+        primaryjoin="and_(Artwork.artwork_id == ArtworkSoftware.artwork_id, ArtworkSoftware.status == 'A')",
+        uselist=True
+    )
+    artwork_topics = relationship(
+        "ArtworkTopic", 
+        back_populates="artwork", 
+        primaryjoin="and_(Artwork.artwork_id == ArtworkTopic.artwork_id, ArtworkTopic.status == 'A')",
+        uselist=True
+    )

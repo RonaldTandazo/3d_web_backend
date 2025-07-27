@@ -9,7 +9,7 @@ class PublishingService:
     def __init__(self, db: AsyncSession):
         self.db = db
         
-    async def getCategories(self):
+    async def getPublishing(self):
         try:
             result = await self.db.execute(select(Publishing).filter(Publishing.status == "A").order_by(asc(Publishing.name)))
             publishing = result.scalars().all()

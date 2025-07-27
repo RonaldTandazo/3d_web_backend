@@ -61,19 +61,47 @@ class ArtworkOwnerService:
 
             artworks = [
                 {
-                    "artwork_id": row.artwork_id,
-                    "title": row.title,
-                    "thumbnail": row.thumbnail,
-                    "publishingId": row.publishingId,
-                    "createdAt": row.createdAt,
-                    "owner": row.owner,
+                    "artwork_id": row['artwork_id'],
+                    "title": row['title'],
+                    "thumbnail": row['thumbnail'],
+                    "publishingId": row['publishingId'],
+                    "createdAt": row['createdAt'],
+                    "owner": row['owner'],
                 }
                 for row in rows
             ]
 
             return {"ok": True, "message": "Artworks Found", "code": 201, "data": artworks}
         except Exception as e:
-            logger.info(e)
+            logger.error(e)
+            error_mapping = {
+                IntegrityError: (400, "Database integrity error"),
+                SQLAlchemyError: (500, "Database error"),
+                ValueError: (400, "Invalid input data"),
+                PermissionError: (401, "Unauthorized access"),
+                FileNotFoundError: (404, "Resource not found"),
+                ConnectionError: (429, "Too many requests"),
+            }
+
+            error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
+            return {"ok": False, "error": error_message, "code": error_code}
+        
+    async def validateArtworkOwner(self, userId, ArtworkId):
+        try:
+            result = await self.db.execute(
+                select(
+                    ArtworkOwner
+                )
+                .where(and_(ArtworkOwner.status == "A", ArtworkOwner.user_id == userId, ArtworkOwner.artwork_id == ArtworkId))
+            )
+
+            owner_record = result.scalar_one_or_none()
+
+            validation = True if owner_record else False 
+
+            return {"ok": True, "message": "Validation Done", "code": 201, "data": validation}
+        except Exception as e:
+            logger.error(e)
             error_mapping = {
                 IntegrityError: (400, "Database integrity error"),
                 SQLAlchemyError: (500, "Database error"),

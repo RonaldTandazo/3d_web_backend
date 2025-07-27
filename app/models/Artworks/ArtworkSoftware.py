@@ -17,4 +17,8 @@ class ArtworkSoftware(Base):
     updated_at = Column(DateTime, onupdate=datetime.datetime.now)
 
     artwork = relationship("Artwork")
-    software = relationship("Software")
+    software = relationship(
+        "Software",
+        back_populates="artwork_softwares",
+        primaryjoin="and_(ArtworkSoftware.software_id == Software.software_id, Software.status == 'A')"    
+    )

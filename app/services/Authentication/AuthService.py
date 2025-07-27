@@ -22,7 +22,8 @@ class AuthService:
             
             if user :
                 if User.verifyPassword(password, user.password):
-                    user.country_name = user.country.name
+                    if user.country != None:
+                        user.country_name = user.country.name
                     return {"ok": True, "message": "Sign In Success", "code": 201, "data": user}
     
                 return {"ok": False, "error": "Invalid Password", "code": 400}

@@ -13,5 +13,6 @@ class ProfileInput:
     firstName: str
     lastName: str
     professionalHeadline: str
+    summary: str
     countryId: int
     city: str

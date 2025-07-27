@@ -16,5 +16,9 @@ class ArtworkCategory(Base):
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now)
 
-    artwork = relationship("Artwork")
-    category = relationship("Category")
+    artwork = relationship("Artwork", back_populates="artwork_categories")
+    category = relationship(
+        "Category", 
+        back_populates="artwork_categories", 
+        primaryjoin="and_(ArtworkCategory.category_id == Category.category_id, Category.status == 'A')"
+    )

@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import relationship
 from app.models.base import Base
 import datetime
 
@@ -13,3 +14,5 @@ class Category(Base):
     terminal = Column(JSONB)
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now)
+
+    artwork_categories = relationship("ArtworkCategory", back_populates="category")

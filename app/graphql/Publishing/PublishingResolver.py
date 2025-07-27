@@ -12,7 +12,7 @@ class PublishingQuery:
         db = info.context["db"]
         publishing_service = PublishingService(db)
         try:
-            publishing = await publishing_service.getCategories()
+            publishing = await publishing_service.getPublishing()
 
             if not publishing.get("ok", False):
                 raise GraphQLError(message=publishing['error'], extensions={"code": "BAD_USER_INPUT"})

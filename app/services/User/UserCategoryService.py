@@ -1,39 +1,37 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.Users.UserSocialNetwork import UserSocialNetwork
+from app.models.Users.UserCategory import UserCategory
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-import datetime
 from sqlalchemy.future import select
 from sqlalchemy import and_, asc, delete
 from sqlalchemy.orm import joinedload
+from app.graphql.UserSkills.UserSkillsPayloads import UserCategoryPayload
 
-class UserSocialNetworkService:
+class UserCategoryService:
     def __init__(self, db: AsyncSession):
         self.db = db
         
-    async def getUserSocialMedia(self, userId):
+    async def getUserCategories(self, userId):
         try:            
             result = await self.db.execute(
-                select(UserSocialNetwork)
-                .options(joinedload(UserSocialNetwork.socialMedia))
-                .filter(and_(UserSocialNetwork.user_id == userId, UserSocialNetwork.status == "A"))
-                .order_by(asc(UserSocialNetwork.user_social_network_id))
+                select(
+                    UserCategory.category_id,
+                    UserCategory.user_id
+                )
+                .filter(and_(UserCategory.user_id == userId, UserCategory.status == "A"))
             )
 
-            social_media_list = [
-                {
-                    "user_social_network_id": item.user_social_network_id,
-                    "social_media_id": item.social_media_id,
-                    "link": item.link,
-                    "network_name": item.socialMedia.name,
-                }
-                for item in result.scalars().all()
+            records = result.mappings().all()
+
+            user_categories_list = [
+                UserCategoryPayload(
+                    userId = item['user_id'],
+                    categoryId = item['category_id'],
+                )
+                for item in records
             ]
     
-            #if social_media_list:
-            return {"ok": True, "message": "User Social Media", "code": 201, "data": social_media_list}
-
-            #return {"ok": False, "error": "Social Media Not Found", "code": 404}
+            return {"ok": True, "message": "User Categories", "code": 201, "data": user_categories_list}
         except Exception as e:
             logger.error(e)
             error_mapping = {
@@ -48,18 +46,92 @@ class UserSocialNetworkService:
             error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
             return {"ok": False, "error": error_message, "code": error_code}
         
-    async def getUserSocialMediaById(self, userSocialNetworkId):
+    async def deleteUserCategories(self, userId, categoryIds):
+        try:            
+            # delete = await self.db.execute(
+            #     update(UserCategory)
+            #     .where(
+            #         and_(
+            #             UserCategory.user_id == userId,
+            #             UserCategory.category_id.not_in(categoryIds),
+            #             UserCategory.status == "A"
+            #         )
+            #     )
+            #     .values(status="I")
+            # )
+            await self.db.execute(
+                delete(UserCategory)
+                .where(
+                    and_(
+                        UserCategory.user_id == userId,
+                        UserCategory.category_id.not_in(categoryIds),
+                        UserCategory.status == "A"
+                    )
+                )
+            )
+            await self.db.commit()
+    
+            return {"ok": True, "message": "Deleted  User Categories", "code": 201, "data": None}
+        except Exception as e:
+            logger.error(e)
+            error_mapping = {
+                IntegrityError: (400, "Database integrity error"),
+                SQLAlchemyError: (500, "Database error"),
+                ValueError: (400, "Invalid input data"),
+                PermissionError: (401, "Unauthorized access"),
+                FileNotFoundError: (404, "Resource not found"),
+                ConnectionError: (429, "Too many requests"),
+            }
+
+            error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
+            return {"ok": False, "error": error_message, "code": error_code}
+        
+    async def deleteAllUserCategories(self, userId):
+        try:            
+            await self.db.execute(
+                delete(UserCategory)
+                .where(
+                    and_(
+                        UserCategory.user_id == userId,
+                        UserCategory.status == "A"
+                    )
+                )
+            )
+            await self.db.commit()
+    
+            return {"ok": True, "message": "Deleted All User Categories", "code": 201, "data": None}
+        except Exception as e:
+            logger.error(e)
+            error_mapping = {
+                IntegrityError: (400, "Database integrity error"),
+                SQLAlchemyError: (500, "Database error"),
+                ValueError: (400, "Invalid input data"),
+                PermissionError: (401, "Unauthorized access"),
+                FileNotFoundError: (404, "Resource not found"),
+                ConnectionError: (429, "Too many requests"),
+            }
+
+            error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
+            return {"ok": False, "error": error_message, "code": error_code}
+        
+    async def validateUserCategory(self, userId, categoryId):
         try:            
             result = await self.db.execute(
-                select(UserSocialNetwork)
-                .filter(and_(UserSocialNetwork.user_social_network_id == userSocialNetworkId, UserSocialNetwork.status == "A"))
+                select(UserCategory)
+                .where(
+                    and_(
+                        UserCategory.user_id == userId,
+                        UserCategory.category_id == categoryId,
+                        UserCategory.status == "A"
+                    )
+                )
             )
-            item = result.scalars().first()
 
-            if not item:
-                return {"ok": False, "error": "Social Network Not Found", "code": 404}
+            existing_record = result.scalar_one_or_none()
 
-            return {"ok": True, "message": "Social Network Found", "code": 201, "data": item}
+            validation = True if existing_record else False 
+
+            return {"ok": True, "message": "Validated User Category", "code": 201, "data": validation}
         except Exception as e:
             logger.error(e)
             error_mapping = {
@@ -74,61 +146,23 @@ class UserSocialNetworkService:
             error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
             return {"ok": False, "error": error_message, "code": error_code}
         
-    async def store(self, userId, socialNetworkId, link, ip, terminal):
-        try:            
-            item = UserSocialNetwork(
-                user_id=userId,
-                social_media_id=socialNetworkId,
-                link=link,
-                ip=ip,
-                terminal=terminal
-            )
-            self.db.add(item)
-            await self.db.commit()
-
-            return {"ok": True, "message": "Social Network Stored", "code": 201, "data": item}
-        except Exception as e:
-            logger.error(e)
-            error_mapping = {
-                IntegrityError: (400, "Database integrity error"),
-                SQLAlchemyError: (500, "Database error"),
-                ValueError: (400, "Invalid input data"),
-                PermissionError: (401, "Unauthorized access"),
-                FileNotFoundError: (404, "Resource not found"),
-                ConnectionError: (429, "Too many requests"),
-            }
-
-            error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
-            return {"ok": False, "error": error_message, "code": error_code}
-        
-    async def update(self, item:UserSocialNetwork, socialNetworkId, link):
-        try:            
-            item.social_media_id = socialNetworkId
-            item.link = link
-            item.updated_at=datetime.datetime.now()
-            await self.db.commit()
-
-            return {"ok": True, "message": "Social Network Updated", "code": 201, "data": item}
-        except Exception as e:
-            logger.error(e)
-            error_mapping = {
-                IntegrityError: (400, "Database integrity error"),
-                SQLAlchemyError: (500, "Database error"),
-                ValueError: (400, "Invalid input data"),
-                PermissionError: (401, "Unauthorized access"),
-                FileNotFoundError: (404, "Resource not found"),
-                ConnectionError: (429, "Too many requests"),
-            }
-
-            error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
-            return {"ok": False, "error": error_message, "code": error_code}
-        
-    async def remove(self, item:UserSocialNetwork):
+    async def storeUserCategories(self, userId, categoryIds, terminal, ip):
         try:
-            await self.db.execute(delete(UserSocialNetwork).where(UserSocialNetwork.user_social_network_id == item.user_social_network_id))
-            await self.db.commit()
+            user_categories_to_add = []
+            for category_id in categoryIds: 
+                user_categories_to_add.append(
+                    UserCategory(
+                        user_id=userId,
+                        category_id=category_id,
+                        ip=ip,
+                        terminal=terminal
+                    )
+                )
 
-            return {"ok": True, "message": "Social Network Unlinked", "code": 201, "data": None}
+            self.db.add_all(user_categories_to_add)
+            await self.db.commit()
+    
+            return {"ok": True, "message": "Stored User Categories", "code": 201, "data": None}
         except Exception as e:
             logger.error(e)
             error_mapping = {

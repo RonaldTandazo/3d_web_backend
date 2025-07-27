@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from app.models.base import Base
+from sqlalchemy.orm import relationship
 import datetime
 
 class Topic(Base):
@@ -13,3 +14,5 @@ class Topic(Base):
     terminal = Column(JSONB)
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now)
+
+    artwork_topics = relationship("ArtworkTopic", back_populates="topic")

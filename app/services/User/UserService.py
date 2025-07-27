@@ -9,9 +9,9 @@ class UserService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def getUserById(self, user_id: int):
+    async def getUserById(self, userId: int):
         try:
-            result = await self.db.execute(select(User).filter(and_(User.user_id == user_id, User.status == "A")))
+            result = await self.db.execute(select(User).filter(and_(User.user_id == userId, User.status == "A")))
             user = result.scalars().first()
 
             if not user:
@@ -19,6 +19,7 @@ class UserService:
 
             return {"ok": True, "message": "User Found", "code": 201, "data": user}
         except Exception as e:
+            logger.error(e)
             error_mapping = {
                 IntegrityError: (400, "Database integrity error"),
                 SQLAlchemyError: (500, "Database error"),
@@ -75,7 +76,7 @@ class UserService:
             error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
             return {"ok": False, "error": error_message, "code": error_code}
 
-    async def registerUser(self, firstName: str, lastName: str, username: str, email: str, password: str):
+    async def registerUser(self, firstName: str, lastName: str, username: str, email: str, password: str, ip: str, terminal):
         try:
             hashed_password = User.hashPassword(password)
             user = User(
@@ -83,8 +84,11 @@ class UserService:
                 last_name=lastName, 
                 username=username, 
                 email=email, 
-                password=hashed_password
+                password=hashed_password,
+                ip=ip,
+                terminal=terminal
             )
+
             self.db.add(user)
             await self.db.commit()
 
@@ -103,19 +107,59 @@ class UserService:
             error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
             return {"ok": False, "error": error_message, "code": error_code}
         
-    async def profileUpdate(self, user: User, firstName: str, lastName: str, professionalHeadline: str, city: str, countryId: int):
+    async def deleteUserPicture(self, user: User):
         try:
-            logger.info(user)
+            user.avatar = None
+            await self.db.commit()
+
+            return {"ok": True, "message": "User Picture Deleted", "code": 201}
+        except Exception as e:
+            logger.error(e)
+            error_mapping = {
+                IntegrityError: (400, "Database integrity error"),
+                SQLAlchemyError: (500, "Database error"),
+                ValueError: (400, "Invalid input data"),
+                PermissionError: (401, "Unauthorized access"),
+                FileNotFoundError: (404, "Resource not found"),
+                ConnectionError: (429, "Too many requests"),
+            }
+
+            error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
+            return {"ok": False, "error": error_message, "code": error_code}
+        
+    async def storeUserPicture(self, user: User, filename):
+        try:
+            user.avatar = filename
+            await self.db.commit()
+
+            return {"ok": True, "message": "User Picture Saved", "code": 201}
+        except Exception as e:
+            logger.error(e)
+            error_mapping = {
+                IntegrityError: (400, "Database integrity error"),
+                SQLAlchemyError: (500, "Database error"),
+                ValueError: (400, "Invalid input data"),
+                PermissionError: (401, "Unauthorized access"),
+                FileNotFoundError: (404, "Resource not found"),
+                ConnectionError: (429, "Too many requests"),
+            }
+
+            error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
+            return {"ok": False, "error": error_message, "code": error_code}
+        
+    async def profileUpdate(self, user: User, firstName: str, lastName: str, professionalHeadline: str, summary: str, city: str, countryId: int):
+        try:
             user.first_name = firstName
             user.last_name = lastName
-            user.professional_headline = professionalHeadline 
+            user.professional_headline = professionalHeadline
+            user.summary = summary
             user.city = city
             user.country_id = countryId
             await self.db.commit()
 
             return {"ok": True, "message": "Profile Updated Successfully", "code": 201}
         except Exception as e:
-            logger.info(e)
+            logger.error(e)
             error_mapping = {
                 IntegrityError: (400, "Database integrity error"),
                 SQLAlchemyError: (500, "Database error"),
@@ -133,7 +177,7 @@ class UserService:
             user.password = User.hashPassword(new_password)
             await self.db.commit()
 
-            return user
+            return {"ok": True, "message": "Password changed successfully", "code": 201}
         except Exception as e:
             error_mapping = {
                 IntegrityError: (400, "Database integrity error"),

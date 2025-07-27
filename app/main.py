@@ -11,10 +11,10 @@ from fastapi.staticfiles import StaticFiles
 from app.config.logger import logger
 import json
 
-
 app = FastAPI()
 
 app.mount("/thumbnails", StaticFiles(directory="app/public/artworks/thumbnails"), name="thumbnails")
+app.mount("/avatars", StaticFiles(directory="app/public/users/avatars"), name="avatars")
 
 app.add_middleware(
     CORSMiddleware,

@@ -25,7 +25,7 @@ class ArtworkCategoryService:
             return {"ok": True, "message": "Artwork Categories Saved Successfully", "code": 201, "data": artwork_categories}
 
         except Exception as e:
-            logger.info(e)
+            logger.error(e)
             error_mapping = {
                 IntegrityError: (400, "Database integrity error"),
                 SQLAlchemyError: (500, "Database error"),

@@ -17,4 +17,8 @@ class ArtworkTopic(Base):
     updated_at = Column(DateTime, onupdate=datetime.datetime.now)
 
     artwork = relationship("Artwork")
-    topic = relationship("Topic")
+    topic = relationship(
+        "Topic",
+        back_populates="artwork_topics",
+        primaryjoin="and_(ArtworkTopic.topic_id == Topic.topic_id, Topic.status == 'A')"
+    )
