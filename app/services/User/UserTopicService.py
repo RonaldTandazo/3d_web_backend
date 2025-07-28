@@ -1,10 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.Users.UserTopic import UserTopic
+from app.models.General.Topic import Topic
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.future import select
-from sqlalchemy import and_, asc, delete
-from sqlalchemy.orm import joinedload
+from sqlalchemy import and_, delete
 from app.graphql.UserSkills.UserSkillsPayloads import UserTopicPayload
 
 class UserTopicService:
@@ -14,18 +14,30 @@ class UserTopicService:
     async def getUserTopics(self, userId):
         try:            
             result = await self.db.execute(
-                select(UserTopic)
-                .options(joinedload(UserTopic.topic))
+                select(
+                    UserTopic.topic_id,
+                    UserTopic.user_id,
+                    Topic.name.label('topic')
+                )
+                .join(
+                    Topic, 
+                    and_(
+                        UserTopic.topic_id == Topic.topic_id,
+                        Topic.status == "A"
+                    )
+                )
                 .filter(and_(UserTopic.user_id == userId, UserTopic.status == "A"))
-                .order_by(asc(UserTopic.user_topic_id))
             )
+
+            records = result.mappings().all()
 
             user_topics_list = [
                 UserTopicPayload(
-                    userId = item.user_id,
-                    topicId = item.topic_id,
+                    userId = item['user_id'],
+                    topicId = item['topic_id'],
+                    topic = item['topic']
                 )
-                for item in result.scalars().all()
+                for item in records
             ]
     
             return {"ok": True, "message": "User Topics", "code": 201, "data": user_topics_list}
@@ -104,7 +116,7 @@ class UserTopicService:
         try:            
             result = await self.db.execute(
                 select(UserTopic)
-                .where(
+                .filter(
                     and_(
                         UserTopic.user_id == userId,
                         UserTopic.topic_id == topicId,

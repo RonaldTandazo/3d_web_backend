@@ -26,9 +26,9 @@ class AuthService:
                         user.country_name = user.country.name
                     return {"ok": True, "message": "Sign In Success", "code": 201, "data": user}
     
-                return {"ok": False, "error": "Invalid Password", "code": 400}
+                return {"ok": False, "error": "Invalid Credentials", "code": 400}
 
-            return {"ok": False, "error": "User Not Found", "code": 404}
+            return {"ok": False, "error": "Invalid Credentials", "code": 404}
         except Exception as e:
             logger.error(e)
             error_mapping = {

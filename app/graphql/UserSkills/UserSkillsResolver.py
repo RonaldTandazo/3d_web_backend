@@ -144,7 +144,7 @@ class UserSkillsMutation:
                     if not existing_category.get("ok", False):
                         raise GraphQLError(message=existing_category['error'], extensions={"code": "BAD_USER_INPUT"})
                     
-                    if not existing_category.get('data', False):
+                    if not existing_category.get('data'):
                         categoryIds.append(categoryId)
 
                 store_categories = await usr_ctg_service.storeUserCategories(current_user.userId, categoryIds, terminal, ip)
@@ -167,10 +167,10 @@ class UserSkillsMutation:
                     if not existing_topic.get("ok", False):
                         raise GraphQLError(message=existing_topic['error'], extensions={"code": "BAD_USER_INPUT"})
                     
-                    if not existing_topic.get('data', False):
+                    if not existing_topic.get('data'):
                         topicIds.append(topicId)
 
-                store_topics = await usr_tpc_service.storeUserTopics(current_user.userId, userSkillsData.topics, terminal, ip)
+                store_topics = await usr_tpc_service.storeUserTopics(current_user.userId, topicIds, terminal, ip)
                 if not store_topics.get("ok", False):
                     raise GraphQLError(message=store_topics['error'], extensions={"code": "BAD_USER_INPUT"})
             elif len(userSkillsData.topics) == 0:
@@ -190,10 +190,10 @@ class UserSkillsMutation:
                     if not existing_software.get("ok", False):
                         raise GraphQLError(message=existing_software['error'], extensions={"code": "BAD_USER_INPUT"})
                     
-                    if not existing_software.get('data', False):
+                    if not existing_software.get('data'):
                         softwareIds.append(softwareId)
 
-                store_softwares = await usr_sftw_service.storeUserSoftwares(current_user.userId, userSkillsData.softwares, terminal, ip)
+                store_softwares = await usr_sftw_service.storeUserSoftwares(current_user.userId, softwareIds, terminal, ip)
                 if not store_softwares.get("ok", False):
                     raise GraphQLError(message=store_softwares['error'], extensions={"code": "BAD_USER_INPUT"})
             elif len(userSkillsData.softwares) == 0:

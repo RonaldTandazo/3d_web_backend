@@ -1,10 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.Users.UserCategory import UserCategory
+from app.models.General.Category import Category
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.future import select
-from sqlalchemy import and_, asc, delete
-from sqlalchemy.orm import joinedload
+from sqlalchemy import and_, delete
 from app.graphql.UserSkills.UserSkillsPayloads import UserCategoryPayload
 
 class UserCategoryService:
@@ -16,7 +16,15 @@ class UserCategoryService:
             result = await self.db.execute(
                 select(
                     UserCategory.category_id,
-                    UserCategory.user_id
+                    UserCategory.user_id,
+                    Category.name.label("category")
+                )
+                .join(
+                    Category, 
+                    and_(
+                        UserCategory.category_id == Category.category_id,
+                        Category.status == "A"
+                    )
                 )
                 .filter(and_(UserCategory.user_id == userId, UserCategory.status == "A"))
             )
@@ -27,6 +35,7 @@ class UserCategoryService:
                 UserCategoryPayload(
                     userId = item['user_id'],
                     categoryId = item['category_id'],
+                    category = item['category'],
                 )
                 for item in records
             ]
@@ -118,7 +127,7 @@ class UserCategoryService:
         try:            
             result = await self.db.execute(
                 select(UserCategory)
-                .where(
+                .filter(
                     and_(
                         UserCategory.user_id == userId,
                         UserCategory.category_id == categoryId,
@@ -129,7 +138,7 @@ class UserCategoryService:
 
             existing_record = result.scalar_one_or_none()
 
-            validation = True if existing_record else False 
+            validation = True if existing_record else False
 
             return {"ok": True, "message": "Validated User Category", "code": 201, "data": validation}
         except Exception as e:

@@ -20,6 +20,7 @@ from app.graphql.Category.CategoryPayloads import CategoryPayload
 from app.graphql.Topic.TopicPayloads import TopicPayload
 from app.graphql.Software.SoftwarePayloads import SoftwarePayload
 from app.graphql.Publishing.PublishingPayloads import PublishingPayload
+
 from typing import AsyncGenerator
 
 @strawberry.type
@@ -159,19 +160,49 @@ class ArtworkMutation:
 @strawberry.type
 class ArtworkQuery:
     @strawberry.field
-    async def getUserArtworks(self, info) -> list[ArtworkPayload]:
+    async def getArtVerseArtworks(self, info) -> list[ArtworkPayload]:
         db = info.context["db"]
-        current_user = info.context["current_user"]
         awk_owner_service = ArtworkOwnerService(db)
         try:
-            artworks = await awk_owner_service.getUserArtworks(current_user.userId)
+            artworks = await awk_owner_service.getArtVerseArtworks()
 
             if not artworks.get("ok", False):
                 raise GraphQLError(message=artworks['error'], extensions={"code": "NOT_FOUND"})
             
             artworks = artworks.get("data")
 
-            return [ArtworkPayload(artworkId=artwork['artwork_id'], title=artwork['title'], thumbnail=artwork['thumbnail'], publishingId=artwork['publishingId'], owner=artwork['owner'], createdAt=artwork['createdAt']) for artwork in artworks]
+            return [ArtworkPayload(artworkId=artwork['artwork_id'], title=artwork['title'], thumbnail=artwork['thumbnail'], publishingId=artwork['publishingId'], owner=artwork['owner'], avatar=artwork['avatar'], createdAt=artwork['createdAt']) for artwork in artworks]
+        except GraphQLError as e:
+            logger.error(e.message)
+            raise e
+
+        except Exception as e:
+            error_mapping = {
+                IntegrityError: ("BAD_USER_INPUT", "E-mail already in used"),
+                SQLAlchemyError: ("INTERNAL_SERVER_ERROR", "Error interno del servidor"),
+                ValueError: ("BAD_USER_INPUT", "Datos inválidos"),
+                PermissionError: ("FORBIDDEN", "Permiso denegado"),
+                FileNotFoundError: ("NOT_FOUND", "Archivo no encontrado"),
+                ConnectionError: ("TOO_MANY_REQUESTS", "Demasiadas solicitudes"),
+            }
+
+            extension_code, error_message = error_mapping.get(type(e), ("INTERNAL_SERVER_ERROR", "Error desconocido"))
+            logger.error(error_message)
+            raise GraphQLError(message=error_message, extensions={"code": extension_code})
+        
+    @strawberry.field
+    async def getUserArtworks(self, info) -> list[ArtworkPayload]:
+        db = info.context["db"]
+        current_user = info.context["current_user"]
+        awk_owner_service = ArtworkOwnerService(db)
+        try:
+            artworks = await awk_owner_service.getUserArtworks(current_user.userId)
+            if not artworks.get("ok", False):
+                raise GraphQLError(message=artworks['error'], extensions={"code": "NOT_FOUND"})
+            
+            artworks = artworks.get("data")
+
+            return [ArtworkPayload(artworkId=artwork['artwork_id'], title=artwork['title'], thumbnail=artwork['thumbnail'], publishingId=artwork['publishingId'], owner=artwork['owner'], avatar=None, createdAt=artwork['createdAt']) for artwork in artworks]
         except GraphQLError as e:
             logger.error(e.message)
             raise e

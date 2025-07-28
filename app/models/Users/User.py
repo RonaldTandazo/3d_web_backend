@@ -27,7 +27,10 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now)
 
-    country = relationship("Country")
+    country = relationship(
+        "Country",
+        primaryjoin="and_(User.country_id == Country.country_id, Country.status == 'A')"
+    )
 
     @classmethod
     def verifyPassword(cls, plain_password, hashed_password):

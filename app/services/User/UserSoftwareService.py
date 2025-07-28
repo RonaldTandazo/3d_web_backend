@@ -1,10 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.Users.UserSoftware import UserSoftware
+from app.models.General.Software import Software
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.future import select
-from sqlalchemy import and_, asc, delete
-from sqlalchemy.orm import joinedload
+from sqlalchemy import and_, delete
 from app.graphql.UserSkills.UserSkillsPayloads import UserSoftwarePayload
 
 class UserSoftwareService:
@@ -14,18 +14,30 @@ class UserSoftwareService:
     async def getUserSoftwares(self, userId):
         try:            
             result = await self.db.execute(
-                select(UserSoftware)
-                .options(joinedload(UserSoftware.software))
+                select(
+                    UserSoftware.user_id,
+                    UserSoftware.software_id,
+                    Software.name.label('software')
+                )
+                .join(
+                    Software, 
+                    and_(
+                        UserSoftware.software_id == Software.software_id,
+                        Software.status == "A"
+                    )
+                )
                 .filter(and_(UserSoftware.user_id == userId, UserSoftware.status == "A"))
-                .order_by(asc(UserSoftware.user_software_id))
             )
+
+            records = result.mappings().all()
 
             user_softwares_list = [
                 UserSoftwarePayload(
-                    userId = item.user_id,
-                    softwareId = item.software_id,
+                    userId = item['user_id'],
+                    softwareId = item['software_id'],
+                    software = item['software']
                 )
-                for item in result.scalars().all()
+                for item in records
             ]
     
             return {"ok": True, "message": "User Softwares", "code": 201, "data": user_softwares_list}
@@ -104,7 +116,7 @@ class UserSoftwareService:
         try:            
             result = await self.db.execute(
                 select(UserSoftware)
-                .where(
+                .filter(
                     and_(
                         UserSoftware.user_id == userId,
                         UserSoftware.software_id == softwareId,
@@ -115,7 +127,7 @@ class UserSoftwareService:
 
             existing_record = result.scalar_one_or_none()
 
-            validation = True if existing_record else False 
+            validation = True if existing_record else False
 
             return {"ok": True, "message": "Validated User Software", "code": 201, "data": validation}
         except Exception as e:

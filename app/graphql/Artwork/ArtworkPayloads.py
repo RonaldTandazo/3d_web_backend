@@ -12,6 +12,7 @@ class ArtworkPayload:
     thumbnail: str | None
     publishingId: int
     owner: str
+    avatar: str | None
     createdAt: str
 
 @strawberry.type

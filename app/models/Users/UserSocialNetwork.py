@@ -18,4 +18,7 @@ class UserSocialNetwork(Base):
     updated_at = Column(DateTime, onupdate=datetime.datetime.now)
 
     user = relationship("User")
-    socialMedia = relationship("SocialMedia")
+    socialMedia = relationship(
+        "SocialMedia",
+        primaryjoin="and_(UserSocialNetwork.social_media_id == SocialMedia.social_media_id, SocialMedia.status == 'A')"
+    )
