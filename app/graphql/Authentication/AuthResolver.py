@@ -1,7 +1,6 @@
 import strawberry
 from app.services.Authentication.AuthService import AuthService
 from app.config.logger import logger
-from app.security.AuthGraph import createAccessToken
 from strawberry.exceptions import GraphQLError
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.graphql.Authentication.AuthPayloads import AuthPayload, ValidateUserPayload
@@ -49,32 +48,19 @@ class AuthQuery:
 @strawberry.type
 class AuthMutation:
     @strawberry.mutation
-    async def login(self, info, username: str, password: str) -> AuthPayload:
+    async def login(self, info, username: str, password: str, rememberMe: bool) -> AuthPayload:
         db = info.context["db"]
         auth_service = AuthService(db)
         try:
-            user = await auth_service.loginUser(username, password)
-            if user.get("ok", False):
-                user_data = user.get("data")
+            login = await auth_service.loginUser(username, password, rememberMe)
+            if login.get("ok", False):
+                loginData = login.get("data")
+                accessToken = loginData['accessToken']
+                refreshToken = loginData['refreshToken']
+                
+                return AuthPayload(accessToken=accessToken, refreshToken=refreshToken, tokenType="bearer")
 
-                token = createAccessToken(data={
-                    "sub": user_data.username,
-                    "userId": user_data.user_id,
-                    "firstName": user_data.first_name, 
-                    "lastName": user_data.last_name, 
-                    "email": user_data.email, 
-                    "username": user_data.username, 
-                    "professionalHeadline": user_data.professional_headline,
-                    "summary": user_data.summary, 
-                    "city": user_data.city, 
-                    "countryId": user_data.country_id, 
-                    "location": f"{user_data.city}, {user_data.country_name}" if user_data.country is not None else None,
-                    "since": user_data.created_at.isoformat(),
-                    "avatar": user_data.avatar
-                })
-                return AuthPayload(accessToken=token, tokenType="bearer")
-
-            raise GraphQLError(message=user['error'], extensions={"code": "BAD_USER_INPUT"})
+            raise GraphQLError(message=login['error'], extensions={"code": "BAD_USER_INPUT"})
 
         except GraphQLError as e:
             logger.error(e.message)
@@ -93,3 +79,23 @@ class AuthMutation:
             extension_code, error_message = error_mapping.get(type(e), ("INTERNAL_SERVER_ERROR", "Error desconocido"))
             logger.error(error_message)
             raise GraphQLError(message=error_message, extensions={"code": extension_code})
+        
+    @strawberry.mutation
+    async def refreshToken(self, info, refreshToken: str) -> AuthPayload:
+        db = info.context["db"]
+        auth_service = AuthService(db)
+        try:
+            tokens = await auth_service.refreshTokens(refreshToken)
+            if tokens.get("ok", False):
+                tokensData = tokens.get("data")
+                accessToken = tokensData['accessToken']
+                refreshToken = tokensData['refreshToken']
+
+                return AuthPayload(accessToken=accessToken, refreshToken=refreshToken, tokenType="bearer")
+            raise GraphQLError(message="Token refresh failed", extensions={"code": "UNAUTHENTICATED"})
+        except GraphQLError as e:
+            logger.error(e.message)
+            raise e
+        except Exception as e:
+            logger.error(e)
+            raise GraphQLError(message="Could not refresh token", extensions={"code": "INTERNAL_SERVER_ERROR"})

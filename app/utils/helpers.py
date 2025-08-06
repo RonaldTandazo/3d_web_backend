@@ -34,6 +34,25 @@ class Helpers:
 
         return formatted_now_utc
     
+    async def prepareAccessTokenData(user):
+        structure = {
+            "sub": user.username,
+            "userId": user.user_id,
+            "firstName": user.first_name,
+            "lastName": user.last_name,
+            "email": user.email,
+            "username": user.username,
+            "professionalHeadline": user.professional_headline,
+            "summary": user.summary,
+            "city": user.city,
+            "countryId": user.country_id,
+            "location": f"{user.city}, {user.country.name}" if user.country else None,
+            "since": user.created_at.isoformat() if user.created_at else None,
+            "avatar": user.avatar
+        }
+        
+        return structure
+    
     async def generateRandomFilename(extension):
         filename = f"{uuid.uuid4()}{extension}"
         return filename
