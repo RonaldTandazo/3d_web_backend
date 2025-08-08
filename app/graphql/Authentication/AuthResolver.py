@@ -99,3 +99,20 @@ class AuthMutation:
         except Exception as e:
             logger.error(e)
             raise GraphQLError(message="Could not refresh token", extensions={"code": "INTERNAL_SERVER_ERROR"})
+        
+    @strawberry.mutation
+    async def revokeToken(self, info, refreshToken: str) -> str:
+        db = info.context["db"]
+        auth_service = AuthService(db)
+        try:
+            revoke = await auth_service.revokeToken(refreshToken)
+            if not revoke.get("ok", False):
+                raise GraphQLError(message="Token refresh failed", extensions={"code": "UNAUTHENTICATED"})
+
+            return revoke.get("message")
+        except GraphQLError as e:
+            logger.error(e.message)
+            raise e
+        except Exception as e:
+            logger.error(e)
+            raise GraphQLError(message="Could not refresh token", extensions={"code": "INTERNAL_SERVER_ERROR"})

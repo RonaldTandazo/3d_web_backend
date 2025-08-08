@@ -5,6 +5,7 @@ from app.config.settings import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUT
 from app.config.logger import logger
 from fastapi.security import OAuth2PasswordBearer
 from datetime import datetime, timedelta
+from strawberry.exceptions import GraphQLError
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -45,35 +46,33 @@ def createRefreshToken(data: dict, expires_delta: timedelta = None):
         logger.error(f"Unexpected error: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error while creating JWT Refresh Token.")
 
-def verifyToken(token: str):
+def verifyToken(token: str): 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except ExpiredSignatureError as e:
         logger.error(f"Unexpected error: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
+        return "Expired"
     except JWTError as e:
         logger.error(f"Unexpected error: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid")
+        return "Invalid"
 
 def getCurrentUserFromToken(token: str = Depends(oauth2_scheme)):
     try:
         payload = verifyToken(token)
+        if payload == "Expired":
+            return {"ok": False,"error": "Token has expired","code": 401}
+        elif payload == "Invalid":
+            return {"ok": False,"error": "Token is invalid","code": 401}
+    
         username = payload.get("sub")
         userId = payload.get("userId")
-
         if not username:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
-                headers={"WWW-Authenticate": "Bearer"},
+            raise GraphQLError(
+                message="Could not validate credentials", 
+                extensions={"code": "UNAUTHENTICATED"}
             )
-
-        return TokenData(username=username, userId=userId)
-    except JWTError as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        
+        return {"ok": True, "data": TokenData(username=username, userId=userId)}
+    except:
+        return {"ok": False, "error": "Token is invalid","code": 401}

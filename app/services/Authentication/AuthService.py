@@ -30,16 +30,17 @@ class AuthService:
                     if user.country != None:
                         user.country_name = user.country.name
 
-                    accessToken = createAccessToken(data=Helpers.prepareAccessTokenData(user))
+                    accessTokenData = await Helpers.prepareAccessTokenData(user)
+                    accessToken = createAccessToken(data=accessTokenData)
 
                     if rememberMe:
                         refreshToken = createRefreshToken(data={
-                            "sub": user.user_id,
+                            "sub": str(user.user_id),
                         })
                     else:
                         refreshToken = createRefreshToken(
                             data={
-                                "sub": user.user_id,
+                                "sub": str(user.user_id),
                             },
                             expires_delta=timedelta(hours=1)
                         )
@@ -111,13 +112,13 @@ class AuthService:
             if not user:
                 raise ValueError("User not found for refresh token")
 
-            access_token_data = Helpers.prepareAccessTokenData(user)
+            access_token_data = await Helpers.prepareAccessTokenData(user)
 
             new_access_token = createAccessToken(data=access_token_data)
-            new_refresh_token = createRefreshToken(data={"sub": user.user_id})
+            new_refresh_token = createRefreshToken(data={"sub": str(user.user_id)})
 
             refresh_token_store = RefreshToken(
-                user_id=user.user_id,
+                user_id=int(user.user_id),
                 token=new_refresh_token['token'],
                 expires_at=new_refresh_token['expire_at']
             )
@@ -127,9 +128,49 @@ class AuthService:
 
             new_tokens = {
                 "accessToken": new_access_token,
-                "accessToken": new_refresh_token['token']
+                "refreshToken": new_refresh_token['token']
             }
             return {"ok": True, "message": "Tokens Refreshed", "code": 201, "data": new_tokens}
+        except Exception as e:
+            logger.error(e)
+            error_mapping = {
+                IntegrityError: (400, "Database integrity error"),
+                SQLAlchemyError: (500, "Database error"),
+                ValueError: (400, "Invalid input data"),
+                PermissionError: (401, "Unauthorized access"),
+                FileNotFoundError: (404, "Resource not found"),
+                ConnectionError: (429, "Too many requests"),
+            }
+
+            error_code, error_message = error_mapping.get(type(e), (500, "Internal server error"))
+            return {"ok": False, "error": error_message, "code": error_code}
+    
+    async def revokeToken(self, token: str):
+        try:
+            payload = verifyToken(token)
+            user_id = payload.get("sub")
+            if user_id is None:
+                raise ValueError("Invalid refresh token payload")
+            
+            result = await self.db.execute(
+                select(RefreshToken).filter(
+                    and_(
+                        RefreshToken.token == token,
+                        RefreshToken.user_id == int(user_id),
+                        RefreshToken.expires_at > datetime.datetime.now(),
+                        RefreshToken.is_revoked == False
+                    )
+                )
+            )
+            db_refresh_token = result.scalar_one_or_none()
+
+            if not db_refresh_token:
+                raise PermissionError("Invalid or revoked refresh token")
+
+            db_refresh_token.is_revoked = True
+            await self.db.commit()
+
+            return {"ok": True, "message": "Token Revoked Successfully", "code": 201, "data": None}
         except Exception as e:
             logger.error(e)
             error_mapping = {

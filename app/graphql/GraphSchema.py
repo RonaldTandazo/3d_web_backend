@@ -1,4 +1,5 @@
 import strawberry
+from app.graphql import AuthExtension
 from app.graphql.User.UserResolver import UserMutation
 from app.graphql.Authentication.AuthResolver import AuthQuery, AuthMutation
 from app.graphql.Country.CountryResolver import CountryQuery
@@ -23,4 +24,4 @@ class Mutation(AuthMutation, UserMutation, UserSkillsMutation, UserSocialNetwork
 class Subscription(ArtworkSubscription):
     pass
 
-GraphSchema = strawberry.Schema(query=Query, mutation=Mutation, subscription=Subscription)
+GraphSchema = strawberry.Schema(query=Query, mutation=Mutation, subscription=Subscription, extensions=[AuthExtension.AuthExtension()])
