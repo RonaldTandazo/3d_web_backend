@@ -24,8 +24,6 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
 )
 
-FREE_OPERATIONS = ["RegisterUser", "Login", "RefreshToken", "GetArtVerseArtworks"]
-
 # GRAPHQL
 async def get_context(
     request: Request,

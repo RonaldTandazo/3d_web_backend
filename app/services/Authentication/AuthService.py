@@ -36,11 +36,13 @@ class AuthService:
                     if rememberMe:
                         refreshToken = createRefreshToken(data={
                             "sub": str(user.user_id),
+                            "rememberMe": rememberMe
                         })
                     else:
                         refreshToken = createRefreshToken(
                             data={
                                 "sub": str(user.user_id),
+                                "rememberMe": rememberMe
                             },
                             expires_delta=timedelta(hours=1)
                         )
@@ -81,6 +83,7 @@ class AuthService:
         try:
             payload = verifyToken(current_refresh_token)
             user_id = payload.get("sub")
+            rememberMe = payload.get("rememberMe")
             if user_id is None:
                 raise ValueError("Invalid refresh token payload")
 
@@ -115,7 +118,20 @@ class AuthService:
             access_token_data = await Helpers.prepareAccessTokenData(user)
 
             new_access_token = createAccessToken(data=access_token_data)
-            new_refresh_token = createRefreshToken(data={"sub": str(user.user_id)})
+            
+            if rememberMe:
+                new_refresh_token = createRefreshToken(data={
+                    "sub": str(user.user_id),
+                    "rememberMe": rememberMe
+                })
+            else:
+                new_refresh_token = createRefreshToken(
+                    data={
+                        "sub": str(user.user_id),
+                        "rememberMe": rememberMe
+                    },
+                    expires_delta=timedelta(hours=1)
+                )
 
             refresh_token_store = RefreshToken(
                 user_id=int(user.user_id),

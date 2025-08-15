@@ -21,7 +21,7 @@ class AuthExtension(SchemaExtension):
 
         logger.info(operation_name)
         
-        if operation_name and operation_name in ["RegisterUser", "Login", "RefreshToken", "GetArtVerseArtworks"]:
+        if operation_name and operation_name in ["RegisterUser", "Login", "RefreshToken", "RevokeToken", "GetArtVerseArtworks"]:
             return
 
         authorization: str = request.headers.get("Authorization")
