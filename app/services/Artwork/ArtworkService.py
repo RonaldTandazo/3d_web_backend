@@ -15,13 +15,16 @@ class ArtworkService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def store(self, title, description, matureContent, ip, terminal, publishing = 3):
+    async def store(self, title, description, matureContent, has_images, has_videos, has_3d_file, ip, terminal, publishing = 3):
         try:
             artwork = Artwork(
                 title=title,
                 description=description,
                 mature_content=matureContent,
                 publishing_id=publishing,
+                has_images=has_images,
+                has_videos=has_videos,
+                has_3d_file=has_3d_file,
                 ip=ip,
                 terminal=terminal
             )

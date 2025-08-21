@@ -3,16 +3,20 @@ from app.graphql.Topic.TopicPayloads import TopicPayload
 from app.graphql.Software.SoftwarePayloads import SoftwarePayload
 from app.graphql.Publishing.PublishingPayloads import PublishingPayload
 from app.graphql.Standard.StandardPayloads import StandardPayload
+from typing import Optional
 import strawberry
 
 @strawberry.type
 class ArtworkPayload:
     artworkId: int
     title: str
-    thumbnail: str | None
+    thumbnail: Optional[str | None] = None
     publishingId: int
+    hasImages: bool = False
+    hasVideos: bool = False
+    has3DFile: bool = False
     owner: str
-    avatar: str | None
+    avatar: Optional[str | None] = None
     createdAt: str
 
 @strawberry.type

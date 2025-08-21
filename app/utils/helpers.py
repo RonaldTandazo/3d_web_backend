@@ -68,6 +68,12 @@ class Helpers:
             if type == "avatar":
                 upload_folder += "/users/avatars"
 
+            if type == "image":
+                upload_folder += "/artworks/multimedia/images"
+
+            if type == "video":
+                upload_folder += "/artworks/multimedia/videos"
+
             os.makedirs(upload_folder, exist_ok=True)
 
             file_path = os.path.join(upload_folder, filename)

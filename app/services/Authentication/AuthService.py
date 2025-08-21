@@ -163,7 +163,7 @@ class AuthService:
     
     async def revokeToken(self, token: str):
         try:
-            payload = verifyToken(token)
+            payload = verifyToken(token, origin = 'Revoke')
             user_id = payload.get("sub")
             if user_id is None:
                 raise ValueError("Invalid refresh token payload")

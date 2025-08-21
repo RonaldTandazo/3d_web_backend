@@ -1,25 +1,25 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.Artworks.ArtworkThumbnail import ArtworkThumbnail
+from app.models.Artworks.ArtworkVideo import ArtworkVideo
 from app.config.logger import logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-class ArtworkThumbnailService:
+class ArtworkVideoService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def store(self, artworkId, filename, thumbnail_name, ip, terminal):
+    async def store(self, artworkId, filename, video_name, ip, terminal):
         try:
-            artwork_thumbnail = ArtworkThumbnail(
+            artwork_video = ArtworkVideo(
                 artwork_id=artworkId,
                 filename=filename,
-                thumbnail_name=thumbnail_name,
+                video_name=video_name,
                 ip=ip,
                 terminal=terminal
             )
-            self.db.add(artwork_thumbnail)
+            self.db.add(artwork_video)
             await self.db.commit()
 
-            return {"ok": True, "message": "Artwork Thumbnail Saved Successfully", "code": 201, "data": artwork_thumbnail}
+            return {"ok": True, "message": "Artwork Video Saved Successfully", "code": 201, "data": artwork_video}
 
         except Exception as e:
             error_mapping = {

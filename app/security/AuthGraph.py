@@ -46,9 +46,14 @@ def createRefreshToken(data: dict, expires_delta: timedelta = None):
         logger.error(f"Unexpected error: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error while creating JWT Refresh Token.")
 
-def verifyToken(token: str): 
+def verifyToken(token: str, origin: str | None = None):
+    options = {"verify_exp": True}
+
+    if origin is 'Revoke':
+        options["verify_exp"] = False
+
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], options=options)
         return payload
     except ExpiredSignatureError as e:
         logger.error(f"Unexpected error: {str(e)}")

@@ -18,8 +18,6 @@ class AuthExtension(SchemaExtension):
         # # Obtener el nombre de la operación para las operaciones libres
         body = info.context["body"]
         operation_name = body.get("operationName")
-
-        logger.info(operation_name)
         
         if operation_name and operation_name in ["RegisterUser", "Login", "RefreshToken", "RevokeToken", "GetArtVerseArtworks"]:
             return
