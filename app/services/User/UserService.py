@@ -95,6 +95,7 @@ class UserService:
             return {"ok": True, "message": "User created successfully", "code": 201, "data": user}
 
         except Exception as e:
+            logger.info(e)
             error_mapping = {
                 IntegrityError: (400, "Database integrity error"),
                 SQLAlchemyError: (500, "Database error"),

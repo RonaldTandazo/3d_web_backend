@@ -9,6 +9,7 @@ class Software(Base):
 
     software_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String(50), index=True, unique=True)
+    image = Column(String(255), default=None, nullable=True)
     status = Column(String(3), default="A")
     ip = Column(String(20))
     terminal = Column(JSONB)
