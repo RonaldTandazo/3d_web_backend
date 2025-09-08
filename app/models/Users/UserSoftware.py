@@ -8,12 +8,12 @@ class UserSoftware(Base):
     __tablename__ = "user_softwares"
 
     user_software_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"))
-    software_id = Column(Integer, ForeignKey("softwares.software_id"))
-    status = Column(String(3), default="A")
-    ip = Column(String(20))
-    terminal = Column(JSONB)
-    created_at = Column(DateTime, default=datetime.datetime.now)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    software_id = Column(Integer, ForeignKey("softwares.software_id"), nullable=False)
+    status = Column(String(3), default="A", nullable=False)
+    ip = Column(String(20), nullable=False)
+    terminal = Column(JSONB, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.now, nullable=False)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now)
 
     user = relationship("User")

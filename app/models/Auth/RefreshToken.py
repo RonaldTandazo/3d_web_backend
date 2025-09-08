@@ -9,6 +9,6 @@ class RefreshToken(Base):
     user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     token = Column(String(500), unique=True, index=True, nullable=False)
     expires_at = Column(DateTime, nullable=False)
-    is_revoked = Column(Boolean, default=False)
+    is_revoked = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.now, nullable=False)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now)

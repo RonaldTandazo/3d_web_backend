@@ -1,15 +1,17 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Date, Time
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from app.models.base import Base
 import datetime
 
-class ArtworkTopic(Base):
-    __tablename__ = "artwork_topics"
+class ArtworkSchedule(Base):
+    __tablename__ = "artwork_schedule"
 
-    artwork_topic_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    artwork_schedule_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     artwork_id = Column(Integer, ForeignKey("artworks.artwork_id"), nullable=False)
-    topic_id = Column(Integer, ForeignKey("topics.topic_id"), nullable=False)
+    publishing_id_target = Column(Integer, ForeignKey("publishing.publishing_id"), nullable=False)
+    schedule_date = Column(Date, nullable=False)
+    schedule_time = Column(Time, nullable=False)
     status = Column(String(3), default="A", nullable=False)
     ip = Column(String(20), nullable=False)
     terminal = Column(JSONB, nullable=False)
@@ -17,8 +19,3 @@ class ArtworkTopic(Base):
     updated_at = Column(DateTime, onupdate=datetime.datetime.now)
 
     artwork = relationship("Artwork")
-    topic = relationship(
-        "Topic",
-        back_populates="artwork_topics",
-        primaryjoin="and_(ArtworkTopic.topic_id == Topic.topic_id, Topic.status == 'A')"
-    )

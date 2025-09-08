@@ -348,7 +348,7 @@ class ArtworkQuery:
             publishing = await pbl_service.getPublishing()
             publishing = publishing.get("data") if publishing.get("ok") else []
             publishing = [
-                PublishingPayload(publishingId=item.publishing_id, name=item.name)
+                PublishingPayload(publishingId=item.publishing_id, name=item.name, type=item.type)
                 for item in publishing
             ]
 

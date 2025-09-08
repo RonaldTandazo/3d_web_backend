@@ -6,3 +6,4 @@ from .ArtworkOwner import ArtworkOwner
 from .ArtworkImage import ArtworkImage
 from .ArtworkVideo import ArtworkVideo
 from .ArtworkThumbnail import ArtworkThumbnail
+from .ArtworkSchedule import ArtworkSchedule

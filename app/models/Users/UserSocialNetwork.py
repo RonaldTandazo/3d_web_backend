@@ -8,13 +8,13 @@ class UserSocialNetwork(Base):
     __tablename__ = "user_social_network"
 
     user_social_network_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"))
-    social_media_id = Column(Integer, ForeignKey("social_media.social_media_id"))
-    link = Column(String(255))
-    status = Column(String(3), default="A")
-    ip = Column(String(20))
-    terminal = Column(JSONB)
-    created_at = Column(DateTime, default=datetime.datetime.now)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    social_media_id = Column(Integer, ForeignKey("social_media.social_media_id"), nullable=False)
+    link = Column(String(255), nullable=False)
+    status = Column(String(3), default="A", nullable=False)
+    ip = Column(String(20), nullable=False)
+    terminal = Column(JSONB, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.now, nullable=False)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now)
 
     user = relationship("User")

@@ -6,6 +6,7 @@ from .Artworks.ArtworkOwner import ArtworkOwner
 from .Artworks.ArtworkImage import ArtworkImage
 from .Artworks.ArtworkVideo import ArtworkVideo
 from .Artworks.ArtworkThumbnail import ArtworkThumbnail
+from .Artworks.ArtworkSchedule import ArtworkSchedule
 from .Auth.RefreshToken import RefreshToken
 from .General.Category import Category
 from .General.Country import Country
