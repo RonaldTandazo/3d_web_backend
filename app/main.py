@@ -18,7 +18,7 @@ app.mount("/avatars", StaticFiles(directory="app/public/users/avatars"), name="a
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:81"],
+    allow_origins=["https://3d-web-frontend.vercel.app/"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
