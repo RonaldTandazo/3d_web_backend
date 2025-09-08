@@ -18,5 +18,3 @@ env/
 venv/*
 
 *.log
-
-public/
